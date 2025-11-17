@@ -1,0 +1,259 @@
+﻿@model BarangayProject.Models.CreateHouseholdVm
+@{
+    Layout = "~/Views/Shared/_BhwLayout.cshtml";
+    ViewData["Title"] = "Add Household";
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h2 class="mb-1 fw-bold">Add Household</h2>
+            <p class="text-muted mb-0">Fill in household information.</p>
+        </div>
+        <div>
+            <a asp-action="Households" class="btn btn-outline-secondary">Back to list</a>
+        </div>
+    </div>
+
+    <form asp-action="CreateHousehold" method="post">
+        @Html.AntiForgeryToken()
+
+        <h5 class="mt-3">Basic Information</h5>
+
+        <div class="row g-2">
+            <div class="col-12"><strong>Father's Information</strong></div>
+
+            <div class="col-md-3">
+                <input asp-for="FatherFirstName" class="form-control" placeholder="First Name" />
+            </div>
+            <div class="col-md-3">
+                <input asp-for="FatherMiddleName" class="form-control" placeholder="Middle Name" />
+            </div>
+            <div class="col-md-3">
+                <input asp-for="FatherLastName" class="form-control" placeholder="Last Name" />
+            </div>
+            <div class="col-md-3">
+                <input asp-for="FatherExtension" class="form-control" placeholder="Extension" />
+            </div>
+
+            <div class="col-md-3 mt-2">
+                <input asp-for="FatherOccupation" class="form-control" placeholder="Occupation" />
+            </div>
+            <div class="col-md-3 mt-2">
+                <input asp-for="FatherEducation" class="form-control" placeholder="Educational Attainment" />
+            </div>
+            <div class="col-md-3 mt-2">
+                <select asp-for="FatherGender" class="form-select">
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Other</option>
+                </select>
+            </div>
+        </div>
+
+        <hr />
+
+        <div class="row g-2 mt-2">
+            <div class="col-12"><strong>Mother's Information</strong></div>
+
+            <div class="col-md-3">
+                <input asp-for="MotherFirstName" class="form-control" placeholder="First Name" />
+            </div>
+            <div class="col-md-3">
+                <input asp-for="MotherMiddleName" class="form-control" placeholder="Middle Name" />
+            </div>
+            <div class="col-md-3">
+                <input asp-for="MotherLastName" class="form-control" placeholder="Last Name" />
+            </div>
+            <div class="col-md-3">
+                <input asp-for="MotherExtension" class="form-control" placeholder="Extension" />
+            </div>
+
+            <div class="col-md-3 mt-2">
+                <input asp-for="MotherOccupation" class="form-control" placeholder="Occupation" />
+            </div>
+            <div class="col-md-3 mt-2">
+                <input asp-for="MotherEducation" class="form-control" placeholder="Educational Attainment" />
+            </div>
+            <div class="col-md-3 mt-2">
+                <select asp-for="MotherGender" class="form-select">
+                    <option>Female</option>
+                    <option>Male</option>
+                    <option>Other</option>
+                </select>
+            </div>
+        </div>
+
+        <hr />
+
+        <div class="mt-3 d-flex justify-content-between align-items-center">
+            <h5>Children's Information</h5>
+            <button type="button" id="addChildBtn" class="btn btn-sm btn-primary">Add Child</button>
+        </div>
+
+        <div id="childrenContainer" class="mt-2">
+            @for (int i = 0; i < (Model.Children?.Count ?? 0); i++)
+            {
+                <div class="child-row border rounded p-3 mb-2" data-index="@i">
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <input name="Children[@i].FirstName" value="@Model.Children[i].FirstName" class="form-control" placeholder="First Name" />
+                        </div>
+                        <div class="col-md-3">
+                            <input name="Children[@i].MiddleName" value="@Model.Children[i].MiddleName" class="form-control" placeholder="Middle Name" />
+                        </div>
+                        <div class="col-md-3">
+                            <input name="Children[@i].LastName" value="@Model.Children[i].LastName" class="form-control" placeholder="Last Name" />
+                        </div>
+                        <div class="col-md-2">
+                            <input name="Children[@i].Extension" value="@Model.Children[i].Extension" class="form-control" placeholder="Ext" />
+                        </div>
+                        <div class="col-md-1 d-flex align-items-center">
+                            <button type="button" class="btn btn-outline-danger btn-sm remove-child">Remove</button>
+                        </div>
+
+                        <div class="col-md-4 mt-2">
+                            <input name="Children[@i].Occupation" value="@Model.Children[i].Occupation" class="form-control" placeholder="Occupation" />
+                        </div>
+                        <div class="col-md-4 mt-2">
+                            <input name="Children[@i].Education" value="@Model.Children[i].Education" class="form-control" placeholder="Educational Attainment" />
+                        </div>
+                        <div class="col-md-4 mt-2">
+                            <input name="Children[@i].Gender" value="@Model.Children[i].Gender" class="form-control" placeholder="Gender" />
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <hr />
+
+        <h5 class="mt-3">Health Information</h5>
+
+        <div class="card p-3 mb-3">
+            <div class="row">
+                <div class="col-md-3 form-check">
+                    <input class="form-check-input" asp-for="MotherPregnant" />
+                    <label class="form-check-label">Mother Pregnant</label>
+                </div>
+                <div class="col-md-3 form-check">
+                    <input class="form-check-input" asp-for="FamilyPlanning" />
+                    <label class="form-check-label">Family Planning</label>
+                </div>
+                <div class="col-md-3 form-check">
+                    <input class="form-check-input" asp-for="ExclusiveBreastfeeding" />
+                    <label class="form-check-label">Exclusive Breastfeeding</label>
+                </div>
+                <div class="col-md-3 form-check">
+                    <input class="form-check-input" asp-for="MixedFeeding" />
+                    <label class="form-check-label">Mixed Feeding</label>
+                </div>
+
+                <div class="col-md-3 form-check mt-2">
+                    <input class="form-check-input" asp-for="BottleFed" />
+                    <label class="form-check-label">Bottle Fed</label>
+                </div>
+                <div class="col-md-3 form-check mt-2">
+                    <input class="form-check-input" asp-for="OthersFeeding" />
+                    <label class="form-check-label">Others</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card p-3 mb-3">
+            <div class="row">
+                <div class="col-md-3 form-check">
+                    <input class="form-check-input" asp-for="UsingIodizedSalt" />
+                    <label class="form-check-label">Using Iodized Salt</label>
+                </div>
+                <div class="col-md-3 form-check">
+                    <input class="form-check-input" asp-for="UsingIFR" />
+                    <label class="form-check-label">Using IFR</label>
+                </div>
+            </div>
+        </div>
+
+        <hr />
+
+        <h5 class="mt-3">Sanitation Information</h5>
+
+        <div class="card p-3 mb-3">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label>Toilet Type</label>
+                    <select asp-for="ToiletType" class="form-select">
+                        <option value="">Select...</option>
+                        <option>WS</option>
+                        <option>VIP</option>
+                        <option>None</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label>Food Production Activity</label>
+                    <select asp-for="FoodProductionActivity" class="form-select">
+                        <option value="">Select...</option>
+                        <option>VG</option>
+                        <option>PG</option>
+                        <option>None</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label>Water Source</label>
+                    <select asp-for="WaterSource" class="form-select">
+                        <option value="">Select...</option>
+                        <option>W</option>
+                        <option>RP</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3 d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save Household</button>
+            <a asp-action="Households" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const container = document.getElementById('childrenContainer');
+            const addBtn = document.getElementById('addChildBtn');
+            let index = container.querySelectorAll('.child-row').length;
+
+            addBtn.addEventListener('click', function () {
+                const idx = index++;
+                const row = document.createElement('div');
+                row.className = 'child-row border rounded p-3 mb-2';
+                row.setAttribute('data-index', idx);
+
+                row.innerHTML = `
+                    <div class="row g-2">
+                        <div class="col-md-3"><input name="Children[${idx}].FirstName" class="form-control" placeholder="First Name" /></div>
+                        <div class="col-md-3"><input name="Children[${idx}].MiddleName" class="form-control" placeholder="Middle Name" /></div>
+                        <div class="col-md-3"><input name="Children[${idx}].LastName" class="form-control" placeholder="Last Name" /></div>
+                        <div class="col-md-2"><input name="Children[${idx}].Extension" class="form-control" placeholder="Ext" /></div>
+                        <div class="col-md-1 d-flex align-items-center"><button type="button" class="btn btn-outline-danger btn-sm remove-child">Remove</button></div>
+
+                        <div class="col-md-4 mt-2"><input name="Children[${idx}].Occupation" class="form-control" placeholder="Occupation" /></div>
+                        <div class="col-md-4 mt-2"><input name="Children[${idx}].Education" class="form-control" placeholder="Educational Attainment" /></div>
+                        <div class="col-md-4 mt-2"><input name="Children[${idx}].Gender" class="form-control" placeholder="Gender" /></div>
+                    </div>`;
+
+                container.appendChild(row);
+            });
+
+            container.addEventListener('click', function (e) {
+                if (e.target && e.target.classList.contains('remove-child')) {
+                    const row = e.target.closest('.child-row');
+                    if (row) row.remove();
+                }
+            });
+        })();
+    </script>
+}

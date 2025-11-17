@@ -1,0 +1,217 @@
+﻿@model BarangayProject.Models.AddUserVm
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Add User";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+
+            <h3 class="mb-4 text-center">Add User</h3>
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger text-center">@TempData["ErrorMessage"]</div>
+            }
+            else if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success text-center">@TempData["SuccessMessage"]</div>
+            }
+
+            <form asp-action="AddUser" method="post" novalidate id="addUserForm">
+                @Html.AntiForgeryToken()
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="FirstName" class="form-label"></label>
+                            <input asp-for="FirstName" class="form-control" />
+                            <span asp-validation-for="FirstName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="MiddleName" class="form-label"></label>
+                            <input asp-for="MiddleName" class="form-control" />
+                            <span asp-validation-for="MiddleName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="LastName" class="form-label"></label>
+                            <input asp-for="LastName" class="form-control" />
+                            <span asp-validation-for="LastName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" placeholder="example@gmail.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Password" class="form-label"></label>
+                                <div class="input-group">
+                                    <input asp-for="Password" type="password" class="form-control" id="addPassword" autocomplete="new-password" />
+                                    <button type="button" class="btn btn-outline-secondary" id="toggleAddPw" tabindex="-1" aria-label="Toggle password visibility"><i class="bi bi-eye"></i></button>
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+
+                                <div id="addPwStrength" class="small text-success mt-1" style="display:none;">Good password</div>
+                                <div id="addPwError" class="small text-danger mt-1" style="display:none;">
+                                    Password must be at least 8 characters and include at least one number and one symbol.
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ConfirmPassword" class="form-label">Confirm Password</label>
+                                <div class="input-group">
+                                    <input asp-for="ConfirmPassword" type="password" class="form-control" id="addConfirmPassword" autocomplete="new-password" />
+                                    <button type="button" class="btn btn-outline-secondary" id="toggleAddConfirmPw" tabindex="-1" aria-label="Toggle confirm password visibility"><i class="bi bi-eye"></i></button>
+                                </div>
+                                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                                <div id="addConfirmError" class="small text-danger mt-1" style="display:none;">Passwords do not match.</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Role" class="form-label"></label>
+                            <select asp-for="Role" class="form-select">
+                                <option value="">-- Select Role --</option>
+                                <option value="Admin">Admin</option>
+                                <option value="BNS">BNS</option>
+                                <option value="BHW">BHW</option>
+                            </select>
+                            <span asp-validation-for="Role" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between">
+                        <a asp-action="ManageUsers" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary" id="addUserSaveBtn">Add User</button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Html.Partial("_ValidationScriptsPartial")
+
+    <script>
+        (function () {
+            const pw = document.getElementById('addPassword');
+            const confirmPw = document.getElementById('addConfirmPassword');
+            const togglePw = document.getElementById('toggleAddPw');
+            const toggleConfirm = document.getElementById('toggleAddConfirmPw');
+            const pwError = document.getElementById('addPwError');
+            const pwStrength = document.getElementById('addPwStrength');
+            const confirmError = document.getElementById('addConfirmError');
+            const saveBtn = document.getElementById('addUserSaveBtn');
+            const form = document.getElementById('addUserForm');
+
+            function hasNumber(s) { return /\d/.test(s); }
+            function hasSymbol(s) { return /[^A-Za-z0-9]/.test(s); }
+            function isLongEnough(s) { return s && s.length >= 8; }
+
+            function validatePassword() {
+                const p = (pw.value || '');
+                const ok = isLongEnough(p) && hasNumber(p) && hasSymbol(p);
+                if (p.length === 0) {
+                    pwError.style.display = 'none';
+                    pwStrength.style.display = 'none';
+                } else if (ok) {
+                    pwError.style.display = 'none';
+                    pwStrength.style.display = '';
+                } else {
+                    pwError.style.display = '';
+                    pwStrength.style.display = 'none';
+                }
+                validateConfirm();
+                return ok;
+            }
+
+            function validateConfirm() {
+                const p = (pw.value || '');
+                const c = (confirmPw.value || '');
+                if (c.length === 0) {
+                    confirmError.style.display = 'none';
+                } else if (p === c) {
+                    confirmError.style.display = 'none';
+                } else {
+                    confirmError.style.display = '';
+                }
+                return p === c && c.length > 0;
+            }
+
+            function updateSaveState() {
+                // If password fields are empty, allow submit (other server-side validation will handle)
+                const anyPw = (pw.value && pw.value.length > 0) || (confirmPw.value && confirmPw.value.length > 0);
+                if (!anyPw) {
+                    saveBtn.disabled = false;
+                    pwError.style.display = 'none';
+                    confirmError.style.display = 'none';
+                    pwStrength.style.display = 'none';
+                    return;
+                }
+
+                const okPw = validatePassword();
+                const okConfirm = validateConfirm();
+                saveBtn.disabled = !(okPw && okConfirm);
+            }
+
+            pw.addEventListener('input', function () {
+                validatePassword();
+                updateSaveState();
+            });
+
+            confirmPw.addEventListener('input', function () {
+                validateConfirm();
+                updateSaveState();
+            });
+
+            togglePw.addEventListener('click', function () {
+                if (pw.type === 'password') {
+                    pw.type = 'text';
+                    togglePw.innerHTML = '<i class="bi bi-eye-slash"></i>';
+                } else {
+                    pw.type = 'password';
+                    togglePw.innerHTML = '<i class="bi bi-eye"></i>';
+                }
+            });
+
+            toggleConfirm.addEventListener('click', function () {
+                if (confirmPw.type === 'password') {
+                    confirmPw.type = 'text';
+                    toggleConfirm.innerHTML = '<i class="bi bi-eye-slash"></i>';
+                } else {
+                    confirmPw.type = 'password';
+                    toggleConfirm.innerHTML = '<i class="bi bi-eye"></i>';
+                }
+            });
+
+            // Prevent submit if password rules fail (only when any password provided)
+            form.addEventListener('submit', function (e) {
+                const anyPw = (pw.value && pw.value.length > 0) || (confirmPw.value && confirmPw.value.length > 0);
+                if (!anyPw) return;
+
+                const okPw = validatePassword();
+                const okConfirm = validateConfirm();
+
+                if (!(okPw && okConfirm)) {
+                    e.preventDefault();
+                    updateSaveState();
+                    if (!okPw) pw.focus();
+                    else confirmPw.focus();
+                    return false;
+                }
+            });
+
+            // initial
+            updateSaveState();
+        })();
+    </script>
+}

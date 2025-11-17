@@ -1,0 +1,209 @@
+﻿@model BarangayProject.Models.SettingsViewModel
+@{
+    ViewData["Title"] = "Settings";
+    Layout = "_AdminLayout";
+}
+
+<!-- ✅ Added consistent spacing and heading style -->
+<div class="container-fluid py-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h2 class="mb-1 fw-bold">Settings</h2>
+            <p class="text-muted mb-0">Manage system preferences and administrative options.</p>
+        </div>
+    </div>
+
+    <form asp-action="Settings" asp-controller="Admin" method="post" enctype="multipart/form-data" id="settingsForm">
+        @Html.AntiForgeryToken()
+
+        <div class="card mb-4 card-hero">
+            <div class="card-header bg-primary text-white">
+                <strong>System Preferences</strong>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center mb-3">
+                    <div class="col-md-3 text-center">
+                        <img id="previewLogo" src="@(Model.LogoPath ?? "/images/logo.png")" alt="Logo" class="img-fluid" style="max-height:120px;border-radius:8px;border:1px solid rgba(0,0,0,0.06)" />
+                    </div>
+                    <div class="col-md-9">
+                        <div class="mb-2">
+                            <label class="form-label">Site / System Name</label>
+                            <input asp-for="SystemName" class="form-control" />
+                            <span asp-validation-for="SystemName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">Change Logo (PNG/JPG)</label>
+                            <input asp-for="SiteLogoUpload" type="file" class="form-control" accept="image/*" id="fileLogo" />
+                            <small class="text-muted">Uploading will replace existing logo file.</small>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">Custom Logo Path (optional)</label>
+                            <input asp-for="LogoPath" class="form-control" placeholder="/images/logo.png or https://..." />
+                            <small class="text-muted">If you don't upload a file, you may specify an external URL or filename here.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4 card-hero">
+            <div class="card-header bg-light">
+                <strong>Admin - Reset User Password</strong>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 align-items-start">
+                    <div class="col-md-3">
+                        <label class="form-label">New Password</label>
+                        <div class="input-group">
+                            <input asp-for="ResetNewPassword" class="form-control" id="newPassword" autocomplete="new-password" />
+                            <button type="button" class="btn btn-outline-secondary" id="toggleNewPw" tabindex="-1" aria-label="Toggle password visibility"><i class="bi bi-eye"></i></button>
+                        </div>
+
+                        <div id="pwStrength" class="small text-success mt-1" style="display:none;">Good password</div>
+                        <div id="pwError" class="small text-danger mt-1" style="display:none;">
+                            Password must be at least 8 characters and include at least one number and one symbol.
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Confirm Password</label>
+                        <div class="input-group">
+                            <input asp-for="ResetNewPasswordConfirm" class="form-control" id="confirmPassword" autocomplete="new-password" />
+                            <button type="button" class="btn btn-outline-secondary" id="toggleConfirmPw" tabindex="-1" aria-label="Toggle confirm password visibility"><i class="bi bi-eye"></i></button>
+                        </div>
+                        <div id="confirmError" class="small text-danger mt-1" style="display:none;">Passwords do not match.</div>
+                    </div>
+                </div>
+                <div class="mt-3 text-muted">Only fill password fields when you want to reset the selected account's password.</div>
+            </div>
+        </div>
+
+        <div class="text-end mb-5">
+            <button type="submit" class="btn btn-primary" id="saveBtn"><i class="bi bi-save me-1"></i> Save Settings</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // preview selected logo image
+        document.getElementById('fileLogo')?.addEventListener('change', function (e) {
+            const input = e.target;
+            if (!input.files || input.files.length === 0) return;
+            const f = input.files[0];
+            const url = URL.createObjectURL(f);
+            document.getElementById('previewLogo').src = url;
+        });
+
+        (function () {
+            const newPw = document.getElementById('newPassword');
+            const confirmPw = document.getElementById('confirmPassword');
+            const toggleNew = document.getElementById('toggleNewPw');
+            const toggleConfirm = document.getElementById('toggleConfirmPw');
+            const pwError = document.getElementById('pwError');
+            const pwStrength = document.getElementById('pwStrength');
+            const confirmError = document.getElementById('confirmError');
+            const saveBtn = document.getElementById('saveBtn');
+            const form = document.getElementById('settingsForm');
+
+            function hasNumber(s) { return /\d/.test(s); }
+            function hasSymbol(s) { return /[^A-Za-z0-9]/.test(s); }
+            function isLongEnough(s) { return s && s.length >= 8; }
+
+            function validatePasswordClient() {
+                const p = (newPw.value || '');
+                const ok = isLongEnough(p) && hasNumber(p) && hasSymbol(p);
+                if (p.length === 0) {
+                    pwError.style.display = 'none';
+                    pwStrength.style.display = 'none';
+                } else if (ok) {
+                    pwError.style.display = 'none';
+                    pwStrength.style.display = '';
+                } else {
+                    pwError.style.display = '';
+                    pwStrength.style.display = 'none';
+                }
+                validateConfirm();
+                return ok;
+            }
+
+            function validateConfirm() {
+                const p = (newPw.value || '');
+                const c = (confirmPw.value || '');
+                if (c.length === 0) {
+                    confirmError.style.display = 'none';
+                } else if (p === c) {
+                    confirmError.style.display = 'none';
+                } else {
+                    confirmError.style.display = '';
+                }
+                return p === c && c.length > 0;
+            }
+
+            function updateSaveButtonState() {
+                const anyPwFilled = (newPw.value && newPw.value.length > 0) || (confirmPw.value && confirmPw.value.length > 0);
+                if (!anyPwFilled) {
+                    saveBtn.disabled = false;
+                    selectUserError.style.display = 'none';
+                    pwError.style.display = 'none';
+                    confirmError.style.display = 'none';
+                    pwStrength.style.display = 'none';
+                    return;
+                }
+                const okPw = validatePasswordClient();
+                const okConfirm = validateConfirm();
+                saveBtn.disabled = !(okUser && okPw && okConfirm);
+            }
+
+            newPw.addEventListener('input', function () {
+                validatePasswordClient();
+                updateSaveButtonState();
+            });
+
+            confirmPw.addEventListener('input', function () {
+                validateConfirm();
+                updateSaveButtonState();
+            });
+
+            toggleNew.addEventListener('click', function () {
+                if (newPw.type === 'password') {
+                    newPw.type = 'text';
+                    toggleNew.innerHTML = '<i class="bi bi-eye-slash"></i>';
+                } else {
+                    newPw.type = 'password';
+                    toggleNew.innerHTML = '<i class="bi bi-eye"></i>';
+                }
+            });
+
+            toggleConfirm.addEventListener('click', function () {
+                if (confirmPw.type === 'password') {
+                    confirmPw.type = 'text';
+                    toggleConfirm.innerHTML = '<i class="bi bi-eye-slash"></i>';
+                } else {
+                    confirmPw.type = 'password';
+                    toggleConfirm.innerHTML = '<i class="bi bi-eye"></i>';
+                }
+            });
+
+            form.addEventListener('submit', function (e) {
+                const anyPwFilled = (newPw.value && newPw.value.length > 0) || (confirmPw.value && confirmPw.value.length > 0);
+                if (!anyPwFilled) return;
+
+                const okPw = validatePasswordClient();
+                const okConfirm = validateConfirm();
+
+                if (!(okUser && okPw && okConfirm)) {
+                    e.preventDefault();
+                    updateSaveButtonState();
+                    else if (!okPw) newPw.focus();
+                    else confirmPw.focus();
+                    return false;
+                }
+            });
+
+            updateSaveButtonState();
+        })();
+    </script>
+}

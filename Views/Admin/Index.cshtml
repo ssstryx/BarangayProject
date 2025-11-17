@@ -1,0 +1,96 @@
+﻿@model BarangayProject.Models.DashboardViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container-fluid py-4">
+    <h2 class="fw-bold mb-1">Dashboard</h2>
+    <p class="text-muted mb-4">Overview of system users and sitios.</p>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 p-3">
+                <h6 class="text-muted mb-1">Total Users</h6>
+                <h2 class="fw-bold">@Model.TotalUsers</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 p-3">
+                <h6 class="text-muted mb-1">Active Users</h6>
+                <h2 class="fw-bold text-success">@Model.ActiveUsers</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 p-3">
+                <h6 class="text-muted mb-1">Inactive Users</h6>
+                <h2 class="fw-bold text-danger">@Model.InactiveUsers</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 p-3">
+                <h6 class="text-muted mb-1">Total Sitios</h6>
+                <h2 class="fw-bold">@Model.TotalSitios</h2>
+            </div>
+        </div>
+    </div>
+
+<div class="card card-hero mt-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Recent Activity</h5>
+            <div>
+                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmClearModal">
+                    <i class="bi bi-trash"></i> Clear
+                </button>
+            </div>
+        </div>
+
+        <div class="list-group">
+            @if (Model.RecentActivities == null || !Model.RecentActivities.Any())
+            {
+                <div class="text-muted p-3">No recent activity.</div>
+            }
+            else
+            {
+                foreach (var item in Model.RecentActivities)
+                {
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>@Html.Raw(item.Description)</div>
+                        <small class="text-muted">@item.Timestamp.ToString("MMM dd, yyyy hh:mm tt")</small>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Clear confirmation modal -->
+<div class="modal fade" id="confirmClearModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title">Clear Recent Activity?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="mb-0">This will permanently delete all recent activity logs from the database. Are you sure?</p>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+
+        <form asp-action="ClearRecentActivity" method="post" class="m-0">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger">Yes, clear activity</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+</div>

@@ -1,0 +1,257 @@
+/* site.css - custom styles for login/register card */
+body {
+    background: #e6e6e6;
+    min-height: 100vh;
+}
+
+/* center container */
+.auth-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 60px);
+}
+
+/* card */
+.auth-card {
+    width: 520px;
+    max-width: 92%;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    padding: 36px 36px;
+}
+
+    /* large heading */
+    .auth-card h2 {
+        font-size: 34px;
+        font-weight: 600;
+        text-align: center;
+        margin-bottom: 26px;
+    }
+
+    /* inputs */
+    .auth-card .form-control {
+        height: 52px;
+        border-radius: 8px;
+        background: #e9e9e9;
+        border: none;
+        padding-left: 18px;
+        box-shadow: none;
+    }
+
+    .auth-card .form-select {
+        height: 52px;
+        border-radius: 8px;
+        background: #e9e9e9;
+        border: none;
+        padding-left: 18px;
+    }
+
+    /* button */
+    .auth-card .btn-primary {
+        height: 52px;
+        width: 100%;
+        font-size: 18px;
+        font-weight: 600;
+        border-radius: 8px;
+        background-color: #607fc4;
+        border: none;
+    }
+
+    /* small footer text */
+    .auth-card .muted {
+        text-align: center;
+        margin-top: 18px;
+        color: #333;
+    }
+
+/* spacing between inputs */
+.form-group.mb-3 {
+    margin-bottom: 16px !important;
+}
+
+/* make link stand out */
+.auth-card a {
+    font-weight: 600;
+    color: #2e5bb6;
+    text-decoration: none;
+}
+
+/* Admin sidebar styles (light/secondary variant) */
+.admin-sidebar {
+    background: #f8f9fb;
+    min-height: 100vh;
+    border-right: 1px solid rgba(0,0,0,0.04);
+}
+
+    .admin-sidebar .sidebar-brand {
+        text-align: center;
+    }
+
+    .admin-sidebar .nav-link {
+        color: #333;
+        border-radius: 6px;
+        transition: background .15s, color .15s;
+    }
+
+        .admin-sidebar .nav-link:hover {
+            background: rgba(0,0,0,0.02);
+        }
+
+        /* Active pill for the "light" sidebar variant */
+        .admin-sidebar .nav-link.active,
+        .admin-sidebar .nav-link.btn-link.active {
+            background: #ffffff;
+            color: #1f3d9b;
+            font-weight: 600;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+        }
+
+/* ----------------
+   Admin theme & layout
+   ---------------- */
+:root {
+    --accent: #5b7be3; /* primary accent */
+    --accent-dark: #3f58c4;
+    --bg-soft: #f6f7fb;
+    --sidebar-bg: linear-gradient(180deg, #1e2a78 0%, #2a3aad 100%); /* deep blue gradient */
+}
+
+.admin-body {
+    background: var(--bg-soft);
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+.admin-wrapper {
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.admin-sidebar {
+    width: 260px;
+    min-height: 100vh;
+    color: #fff;
+    background: var(--sidebar-bg);
+    transition: width .25s ease, transform .2s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+    /* Sidebar link defaults (dark sidebar) */
+    .admin-sidebar .nav-link {
+        color: rgba(255,255,255,0.95);
+        padding: .65rem .8rem;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: background .12s ease, color .12s ease;
+    }
+
+        /* Hover for dark sidebar */
+        .admin-sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.06);
+            color: #fff;
+        }
+
+        /* Active pill for dark sidebar: white pill + dark text */
+        .admin-sidebar .nav-link.active {
+            background: #ffffff !important;
+            color: #0b3b8c !important;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+            font-weight: 700;
+        }
+
+            /* Icon color for active link (dark) */
+            .admin-sidebar .nav-link.active i,
+            .admin-sidebar .nav-link.active .bi {
+                color: #0b3b8c !important;
+            }
+
+    /* sidebar top/bottom separators */
+    .admin-sidebar .sidebar-top {
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .admin-sidebar .sidebar-footer {
+        border-top: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* collapsed state */
+    .admin-sidebar.collapsed {
+        width: 72px;
+    }
+
+        .admin-sidebar.collapsed .nav-link {
+            text-align: center;
+            padding-left: .5rem;
+        }
+
+    .admin-sidebar.open {
+        transform: translateX(0);
+    }
+
+/* main */
+.admin-main {
+    background: transparent;
+}
+
+/* header */
+.admin-header {
+    background: #fff;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+}
+
+/* cards */
+.card-hero {
+    background: linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+    border: none;
+    border-radius: 12px;
+}
+
+.stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--accent-dark);
+}
+
+/* accent */
+.text-accent {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: var(--accent);
+    border: none;
+}
+
+    .btn-primary:hover {
+        background: var(--accent-dark);
+    }
+
+/* avatar */
+.avatar-sm {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+}
+
+/* responsive small screens */
+@media(max-width: 767px) {
+    .admin-sidebar {
+        position: fixed;
+        left: -260px;
+        top: 0;
+        z-index: 1050;
+    }
+
+        .admin-sidebar.open {
+            left: 0;
+        }
+
+    .admin-main {
+        margin-left: 0;
+    }
+}

@@ -1,0 +1,42 @@
+﻿@model BarangayProject.Models.Sitio
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Edit Sitio";
+}
+
+<div class="container py-4">
+    <h3>Edit Sitio</h3>
+
+    <form asp-action="EditSitio" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="AssignedBhwId" class="form-label">Assigned BHW</label>
+                    <select asp-for="AssignedBhwId" class="form-select" asp-items="(SelectList)ViewBag.BHWs">
+                        <option value="">-- Unassigned --</option>
+                    </select>
+                    <span asp-validation-for="AssignedBhwId" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="card-footer d-flex justify-content-between">
+                <a asp-action="ManageSitios" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

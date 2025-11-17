@@ -1,0 +1,70 @@
+﻿@model BarangayProject.Models.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Register";
+    var roles = (string[])ViewData["Roles"];
+}
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <h2>Register</h2>
+
+        <form asp-action="Register" method="post" novalidate>
+            <div asp-validation-summary="All" class="text-danger mb-2"></div>
+            <input type="hidden" asp-for="ReturnUrl" />
+
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <input asp-for="FirstName" class="form-control" placeholder="First name" />
+                    <span asp-validation-for="FirstName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <input asp-for="MiddleName" class="form-control" placeholder="Middle name (optional)" />
+                    <span asp-validation-for="MiddleName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <input asp-for="LastName" class="form-control" placeholder="Last name" />
+                    <span asp-validation-for="LastName" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="form-group mb-3">
+                <input asp-for="Email" class="form-control" placeholder="Email" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <input asp-for="Password" class="form-control" placeholder="Password" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <input asp-for="ConfirmPassword" class="form-control" placeholder="Confirm password" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <select asp-for="Role" class="form-select">
+                    <option value="">--Select Role--</option>
+                    @foreach (var r in roles)
+                    {
+                        <option value="@r">@r</option>
+                    }
+                </select>
+                <span asp-validation-for="Role" class="text-danger small"></span>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">Register</button>
+            </div>
+
+            <div class="muted">
+                Already have an account? <a asp-controller="Account" asp-action="Login">Login</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

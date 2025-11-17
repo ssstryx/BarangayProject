@@ -1,0 +1,40 @@
+﻿@model BarangayProject.Models.BhwDashboardVm
+@{
+    Layout = "~/Views/Shared/_BhwLayout.cshtml";
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container-fluid">
+    <h2 class="fw-bold mb-1">Dashboard</h2>
+    <p class="text-muted mb-4">Barangay statistics overview.</p>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 p-3">
+                <h6 class="text-muted mb-1">Total Population</h6>
+                <h2 class="fw-bold">@ViewBag.TotalPopulation</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 p-3">
+                <h6 class="text-muted mb-1">Total Households</h6>
+                <h2 class="fw-bold">@ViewBag.TotalHouseholds</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 p-3">
+                <h6 class="text-muted mb-1">Total Female</h6>
+                <h2 class="fw-bold text-danger">@ViewBag.TotalFemale</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100 p-3">
+                <h6 class="text-muted mb-1">Total Male</h6>
+                <h2 class="fw-bold text-primary">@ViewBag.TotalMale</h2>
+            </div>
+        </div>
+    </div>
+</div>

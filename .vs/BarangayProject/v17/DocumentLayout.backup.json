@@ -1,0 +1,221 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\views\\bhw\\createhousehold.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:views\\bhw\\createhousehold.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\views\\shared\\_bhwlayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:views\\shared\\_bhwlayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\views\\bhw\\households.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:views\\bhw\\households.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\controllers\\bhwcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:controllers\\bhwcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\models\\createhouseholdvm.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:models\\createhouseholdvm.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\models\\household.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:models\\household.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\models\\bhwdashboardvm.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:models\\bhwdashboardvm.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\views\\bhw\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:views\\bhw\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:data\\applicationdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\views\\bhw\\settings.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:views\\bhw\\settings.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\migrations\\20251117103806_addhouseholdtable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:migrations\\20251117103806_addhouseholdtable.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CreateHousehold.cshtml",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Bhw\\CreateHousehold.cshtml",
+              "RelativeDocumentMoniker": "Views\\Bhw\\CreateHousehold.cshtml",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Bhw\\CreateHousehold.cshtml",
+              "RelativeToolTip": "Views\\Bhw\\CreateHousehold.cshtml",
+              "ViewState": "AgIAAJsAAAAAAAAAAAAowMcAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-17T10:48:27.14Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "CreateHouseholdVm.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Models\\CreateHouseholdVm.cs",
+              "RelativeDocumentMoniker": "Models\\CreateHouseholdVm.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Models\\CreateHouseholdVm.cs",
+              "RelativeToolTip": "Models\\CreateHouseholdVm.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAA5wDkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-17T10:46:07.075Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ApplicationDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Data\\ApplicationDbContext.cs",
+              "RelativeDocumentMoniker": "Data\\ApplicationDbContext.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Data\\ApplicationDbContext.cs",
+              "RelativeToolTip": "Data\\ApplicationDbContext.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAABUAAABMAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-17T10:37:13.255Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Household.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Models\\Household.cs",
+              "RelativeDocumentMoniker": "Models\\Household.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Models\\Household.cs",
+              "RelativeToolTip": "Models\\Household.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-17T10:36:30.718Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Settings.cshtml",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Bhw\\Settings.cshtml",
+              "RelativeDocumentMoniker": "Views\\Bhw\\Settings.cshtml",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Bhw\\Settings.cshtml",
+              "RelativeToolTip": "Views\\Bhw\\Settings.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-17T10:15:11.527Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Households.cshtml",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Bhw\\Households.cshtml",
+              "RelativeDocumentMoniker": "Views\\Bhw\\Households.cshtml",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Bhw\\Households.cshtml",
+              "RelativeToolTip": "Views\\Bhw\\Households.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAOgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-17T10:14:56.762Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Bhw\\Index.cshtml",
+              "RelativeDocumentMoniker": "Views\\Bhw\\Index.cshtml",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Bhw\\Index.cshtml",
+              "RelativeToolTip": "Views\\Bhw\\Index.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-17T10:04:28.794Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "BhwController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Controllers\\BhwController.cs",
+              "RelativeDocumentMoniker": "Controllers\\BhwController.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Controllers\\BhwController.cs",
+              "RelativeToolTip": "Controllers\\BhwController.cs",
+              "ViewState": "AgIAAEEBAAAAAAAAAAAAAFUBAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-17T10:03:42.349Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "20251117103806_AddHouseholdTable.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Migrations\\20251117103806_AddHouseholdTable.cs",
+              "RelativeDocumentMoniker": "Migrations\\20251117103806_AddHouseholdTable.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Migrations\\20251117103806_AddHouseholdTable.cs",
+              "RelativeToolTip": "Migrations\\20251117103806_AddHouseholdTable.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-17T10:38:06.419Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "_BhwLayout.cshtml",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Shared\\_BhwLayout.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_BhwLayout.cshtml",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Shared\\_BhwLayout.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_BhwLayout.cshtml",
+              "ViewState": "AgIAANsAAAAAAAAAAAAAAPEAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-17T10:57:38.087Z"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "BhwDashboardVm.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Models\\BhwDashboardVm.cs",
+              "RelativeDocumentMoniker": "Models\\BhwDashboardVm.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Models\\BhwDashboardVm.cs",
+              "RelativeToolTip": "Models\\BhwDashboardVm.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-17T10:41:32.684Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Controllers\\AccountController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AccountController.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Controllers\\AccountController.cs",
+              "RelativeToolTip": "Controllers\\AccountController.cs",
+              "ViewState": "AgIAACwAAAAAAAAAAAAwwEYAAAANAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-17T10:01:08.275Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
