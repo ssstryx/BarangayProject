@@ -21,6 +21,10 @@ namespace BarangayProject.Data
         public DbSet<Sitio> Sitios { get; set; } = null!;
         public DbSet<SystemConfiguration> SystemConfigurations { get; set; }
         public DbSet<Household> Households { get; set; }
+        public DbSet<Resident> Residents { get; set; }
+        public DbSet<HouseholdHealth> HouseholdHealth { get; set; }
+        public DbSet<HouseholdSanitation> HouseholdSanitation { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

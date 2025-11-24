@@ -1,15 +1,16 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿// Controllers/BhwController.cs
+using BarangayProject.Data;
+using BarangayProject.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using BarangayProject.Data;
-using BarangayProject.Models;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Text.Json;
-
+using System.Threading.Tasks;
 
 namespace BarangayProject.Controllers
 {
@@ -18,11 +19,14 @@ namespace BarangayProject.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _db;
+        private readonly ILogger<BhwController> _logger;
 
-        public BhwController(UserManager<ApplicationUser> userManager, ApplicationDbContext db)
+        // ILogger injected correctly
+        public BhwController(UserManager<ApplicationUser> userManager,ApplicationDbContext db,ILogger<BhwController> logger)
         {
-            _userManager = userManager;
-            _db = db;
+            _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
+            _db = db ?? throw new ArgumentNullException(nameof(db));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         // --- Helper: try to find a DbSet/IQueryable on the context by common names ---
@@ -273,52 +277,57 @@ namespace BarangayProject.Controllers
             return View(vm);
         }
 
+        // GET: list only non-archived households
         public async Task<IActionResult> Households()
         {
-            // If Households DbSet exists return list, otherwise empty list
-            var householdsQ = GetQueryableIfExists("Households", "Household", "Homes", "Families");
-            if (householdsQ == null)
-            {
-                return View(Enumerable.Empty<Household>());
-            }
-
-            // Convert IQueryable<object> back to concrete list via provider
-            var list = householdsQ.Provider.CreateQuery(householdsQ.Expression).Cast<Household>().ToList();
+            var list = await _db.Households
+                                .Where(h => !h.IsArchived)
+                                .OrderBy(h => h.Id)
+                                .ToListAsync();
             return View(list);
+        }
+
+        // POST: archive (soft-delete)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ArchiveHousehold(int id)
+        {
+            var hh = await _db.Households.FindAsync(id);
+            if (hh == null) return NotFound();
+
+            hh.IsArchived = true;
+            hh.ArchivedAt = DateTime.UtcNow;
+            hh.ArchivedBy = User?.Identity?.Name ?? "unknown";
+
+            _db.Households.Update(hh);
+            await _db.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Household archived.";
+            return RedirectToAction(nameof(Households));
+        }
+
+        // POST: restore
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RestoreHousehold(int id)
+        {
+            var hh = await _db.Households.FindAsync(id);
+            if (hh == null) return NotFound();
+
+            hh.IsArchived = false;
+            hh.ArchivedAt = null;
+            hh.ArchivedBy = null;
+
+            _db.Households.Update(hh);
+            await _db.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Household restored.";
+            return RedirectToAction(nameof(Households)); // or redirect to Archive list
         }
 
         public IActionResult Settings()
         {
             return View();
-        }
-
-        // ---------------- CRUD ----------------
-
-        public async Task<IActionResult> ViewHousehold(int id)
-        {
-            var hh = await _db.Households.FindAsync(id);
-            if (hh == null) return NotFound();
-            return View(hh);
-        }
-
-        public async Task<IActionResult> EditHousehold(int id)
-        {
-            var hh = await _db.Households.FindAsync(id);
-            if (hh == null) return NotFound();
-            return View(hh);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> DeleteHousehold(int id)
-        {
-            var hh = await _db.Households.FindAsync(id);
-            if (hh == null) return NotFound();
-
-            _db.Households.Remove(hh);
-            await _db.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Household deleted.";
-            return RedirectToAction(nameof(Households));
         }
 
         // GET: /Bhw/CreateHousehold
@@ -336,12 +345,31 @@ namespace BarangayProject.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateHousehold(CreateHouseholdVm vm)
         {
+            // If ModelState invalid — serialize the errors into TempData for debugging.
             if (!ModelState.IsValid)
             {
+                var ms = ModelState
+                    .Where(kvp => kvp.Value.Errors.Count > 0)
+                    .Select(kvp => new {
+                        Key = kvp.Key,
+                        Errors = kvp.Value.Errors.Select(e => string.IsNullOrEmpty(e.ErrorMessage) ? (e.Exception?.Message ?? "Exception with no message") : e.ErrorMessage).ToArray()
+                    })
+                    .ToArray();
+
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine("ModelState is invalid. Errors:");
+                foreach (var entry in ms)
+                {
+                    sb.AppendLine($" - {entry.Key}: {string.Join("; ", entry.Errors)}");
+                }
+
+                // Log and show to the user (debugging only)
+                _logger.LogWarning("CreateHousehold: modelstate invalid: {Errors}", sb.ToString());
+                TempData["ErrorMessage"] = sb.ToString();
+
                 return View(vm);
             }
 
-            // Compose family head name (Father last/middle/first preferred or Mother if father blank)
             string familyHead = null;
             if (!string.IsNullOrWhiteSpace(vm.FatherFirstName) || !string.IsNullOrWhiteSpace(vm.FatherLastName))
             {
@@ -349,30 +377,163 @@ namespace BarangayProject.Controllers
             }
             if (string.IsNullOrWhiteSpace(familyHead))
             {
-                // fallback to mother
                 familyHead = $"{vm.MotherFirstName} {vm.MotherMiddleName} {vm.MotherLastName} {vm.MotherExtension}".Replace("  ", " ").Trim();
             }
-            if (string.IsNullOrWhiteSpace(familyHead))
+            if (string.IsNullOrWhiteSpace(familyHead)) familyHead = "Unknown";
+
+            var detailsJson = System.Text.Json.JsonSerializer.Serialize(vm, new System.Text.Json.JsonSerializerOptions { WriteIndented = false });
+
+            using var tx = await _db.Database.BeginTransactionAsync();
+            try
             {
-                familyHead = "Unknown";
+                var household = new Household
+                {
+                    FamilyHead = familyHead,
+                    Details = detailsJson
+                };
+
+                _db.Households.Add(household);
+                await _db.SaveChangesAsync(); // ensure household.Id
+
+                string UseOther(string selected, string? other) =>
+                    string.Equals(selected, "Others", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(other)
+                        ? other!.Trim()
+                        : (selected ?? "").Trim();
+
+                if (!string.IsNullOrWhiteSpace(vm.FatherFirstName) || !string.IsNullOrWhiteSpace(vm.FatherLastName))
+                {
+                    var occ = UseOther(vm.FatherOccupation, vm.FatherOccupationOther);
+                    var edu = UseOther(vm.FatherEducation, vm.FatherEducationOther);
+
+                    var father = new Resident
+                    {
+                        HouseholdId = household.Id,
+                        Role = "Father",
+                        FirstName = vm.FatherFirstName?.Trim() ?? "",
+                        MiddleName = vm.FatherMiddleName?.Trim() ?? "",
+                        LastName = vm.FatherLastName?.Trim() ?? "",
+                        Extension = vm.FatherExtension,
+                        Sex = vm.FatherSex ?? "Male",
+                        Occupation = occ ?? "",
+                        OccupationOther = string.Equals(occ, vm.FatherOccupationOther, StringComparison.OrdinalIgnoreCase) ? vm.FatherOccupationOther : null,
+                        Education = edu ?? "",
+                        EducationOther = string.Equals(edu, vm.FatherEducationOther, StringComparison.OrdinalIgnoreCase) ? vm.FatherEducationOther : null
+                    };
+
+                    _db.Residents.Add(father);
+                }
+
+                if (!string.IsNullOrWhiteSpace(vm.MotherFirstName) || !string.IsNullOrWhiteSpace(vm.MotherLastName))
+                {
+                    var occ = UseOther(vm.MotherOccupation, vm.MotherOccupationOther);
+                    var edu = UseOther(vm.MotherEducation, vm.MotherEducationOther);
+
+                    var mother = new Resident
+                    {
+                        HouseholdId = household.Id,
+                        Role = "Mother",
+                        FirstName = vm.MotherFirstName?.Trim() ?? "",
+                        MiddleName = vm.MotherMiddleName?.Trim() ?? "",
+                        LastName = vm.MotherLastName?.Trim() ?? "",
+                        Extension = vm.MotherExtension,
+                        Sex = vm.MotherSex ?? "Female",
+                        Occupation = occ ?? "",
+                        OccupationOther = string.Equals(occ, vm.MotherOccupationOther, StringComparison.OrdinalIgnoreCase) ? vm.MotherOccupationOther : null,
+                        Education = edu ?? "",
+                        EducationOther = string.Equals(edu, vm.MotherEducationOther, StringComparison.OrdinalIgnoreCase) ? vm.MotherEducationOther : null
+                    };
+
+                    _db.Residents.Add(mother);
+                }
+
+                if (vm.Children != null)
+                {
+                    foreach (var c in vm.Children)
+                    {
+                        if (string.IsNullOrWhiteSpace(c.FirstName) && string.IsNullOrWhiteSpace(c.LastName)) continue;
+
+                        var occ = UseOther(c.Occupation, c.OccupationOther);
+                        var edu = UseOther(c.Education, c.EducationOther);
+
+                        var child = new Resident
+                        {
+                            HouseholdId = household.Id,
+                            Role = "Child",
+                            FirstName = c.FirstName?.Trim() ?? "",
+                            MiddleName = c.MiddleName?.Trim() ?? "",
+                            LastName = c.LastName?.Trim() ?? "",
+                            Extension = c.Extension,
+                            Sex = c.Sex ?? "",
+                            Occupation = occ ?? "",
+                            OccupationOther = string.Equals(occ, c.OccupationOther, StringComparison.OrdinalIgnoreCase) ? c.OccupationOther : null,
+                            Education = edu ?? "",
+                            EducationOther = string.Equals(edu, c.EducationOther, StringComparison.OrdinalIgnoreCase) ? c.EducationOther : null
+                        };
+
+                        _db.Residents.Add(child);
+                    }
+                }
+
+                var health = new HouseholdHealth
+                {
+                    HouseholdId = household.Id,
+                    MotherPregnant = vm.MotherPregnant,
+                    FamilyPlanning = vm.FamilyPlanning,
+                    ExclusiveBreastfeeding = vm.ExclusiveBreastfeeding,
+                    MixedFeeding = vm.MixedFeeding,
+                    BottleFed = vm.BottleFed,
+                    OthersFeeding = vm.OthersFeeding,
+                    OthersFeedingSpecify = vm.OthersFeeding ? vm.OthersFeedingSpecify : null,
+                    UsingIodizedSalt = vm.UsingIodizedSalt,
+                    UsingIFR = vm.UsingIFR
+                };
+                _db.HouseholdHealth.Add(health);
+
+                var sanitation = new HouseholdSanitation
+                {
+                    HouseholdId = household.Id,
+                    ToiletType = UseOther(vm.ToiletType, vm.ToiletTypeOther),
+                    ToiletTypeOther = string.Equals(vm.ToiletType, "Others", StringComparison.OrdinalIgnoreCase) ? vm.ToiletTypeOther : null,
+                    FoodProductionActivity = UseOther(vm.FoodProductionActivity, vm.FoodProductionActivityOther),
+                    FoodProductionActivityOther = string.Equals(vm.FoodProductionActivity, "Others", StringComparison.OrdinalIgnoreCase) ? vm.FoodProductionActivityOther : null,
+                    WaterSource = UseOther(vm.WaterSource, vm.WaterSourceOther),
+                    WaterSourceOther = string.Equals(vm.WaterSource, "Others", StringComparison.OrdinalIgnoreCase) ? vm.WaterSourceOther : null
+                };
+                _db.HouseholdSanitation.Add(sanitation);
+
+                await _db.SaveChangesAsync();
+                await tx.CommitAsync();
+
+                TempData["SuccessMessage"] = "Household added successfully.";
+                return RedirectToAction(nameof(Households));
             }
-
-            // Serialize full form to JSON and save in Details
-            var detailsJson = JsonSerializer.Serialize(vm, new JsonSerializerOptions { WriteIndented = false });
-
-            var household = new Household
+            catch (Exception ex)
             {
-                FamilyHead = familyHead,
-                Details = detailsJson
-            };
+                // Build a friendly error string including inner exceptions
+                string GetFullMessage(Exception e)
+                {
+                    var sb = new System.Text.StringBuilder();
+                    Exception cur = e;
+                    while (cur != null)
+                    {
+                        sb.AppendLine(cur.Message);
+                        cur = cur.InnerException;
+                    }
+                    return sb.ToString();
+                }
 
-            _db.Households.Add(household);
-            await _db.SaveChangesAsync();
+                try { await tx.RollbackAsync(); } catch { /* ignore rollback errors */ }
 
-            TempData["SuccessMessage"] = "Household added successfully.";
+                var full = GetFullMessage(ex);
+                _logger.LogError(ex, "CreateHousehold failed: {Message}", full);
 
-            return RedirectToAction(nameof(Households));
+                // Put the full message into TempData so it shows on page (debugging only)
+                TempData["ErrorMessage"] = "Error saving household: " + full;
+
+                ModelState.AddModelError("", "Validation failed. Check server logs for details.");
+                return View(vm);
+            }
         }
+
     }
-    
 }

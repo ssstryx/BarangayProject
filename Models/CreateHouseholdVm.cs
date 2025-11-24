@@ -1,30 +1,39 @@
 ﻿// Models/CreateHouseholdVm.cs
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace BarangayProject.Models
 {
+    // ViewModel for CreateHousehold form.
+    // IMPORTANT: keep most properties nullable so they are not implicitly required
+    // by model-binding/validation. Validate specific fields server-side where needed.
     public class CreateHouseholdVm
     {
-        // Father
-        public string FatherFirstName { get; set; }
-        public string FatherMiddleName { get; set; }
-        public string FatherLastName { get; set; }
-        public string FatherExtension { get; set; }
-        public string FatherOccupation { get; set; }
-        public string FatherEducation { get; set; }
-        public string FatherGender { get; set; } = "Male";
+        // Father (all optional => nullable)
+        public string? FatherFirstName { get; set; }
+        public string? FatherMiddleName { get; set; }
+        public string? FatherLastName { get; set; }
+        public string? FatherExtension { get; set; }
+        public string? FatherOccupation { get; set; }
+        public string? FatherEducation { get; set; }
+        public string? FatherOccupationOther { get; set; }
+        public string? FatherEducationOther { get; set; }
 
-        // Mother
-        public string MotherFirstName { get; set; }
-        public string MotherMiddleName { get; set; }
-        public string MotherLastName { get; set; }
-        public string MotherExtension { get; set; }
-        public string MotherOccupation { get; set; }
-        public string MotherEducation { get; set; }
-        public string MotherGender { get; set; } = "Female";
+        // Sex default if provided, but property is nullable so binder won’t require it
+        public string? FatherSex { get; set; } = "Male";
 
-        // Children - dynamic list; the view will post indexed fields e.g. Children[0].FirstName
+        // Mother (all optional => nullable)
+        public string? MotherFirstName { get; set; }
+        public string? MotherMiddleName { get; set; }
+        public string? MotherLastName { get; set; }
+        public string? MotherExtension { get; set; }
+        public string? MotherOccupation { get; set; }
+        public string? MotherEducation { get; set; }
+        public string? MotherOccupationOther { get; set; }
+        public string? MotherEducationOther { get; set; }
+
+        public string? MotherSex { get; set; } = "Female";
+
+        // Children - dynamic list (ChildVm properties made nullable below)
         public List<ChildVm> Children { get; set; } = new();
 
         // Health checks (booleans)
@@ -39,19 +48,30 @@ namespace BarangayProject.Models
         public bool UsingIFR { get; set; }
 
         // Sanitation
-        public string ToiletType { get; set; }
-        public string FoodProductionActivity { get; set; }
-        public string WaterSource { get; set; }
+        public string? ToiletType { get; set; }
+        public string? FoodProductionActivity { get; set; }
+        public string? WaterSource { get; set; }
+
+        // Sanitation "Other" details
+        public string? ToiletTypeOther { get; set; }
+        public string? FoodProductionActivityOther { get; set; }
+        public string? WaterSourceOther { get; set; }
+
+        // Health "Others feeding" specify
+        public string? OthersFeedingSpecify { get; set; }
     }
 
     public class ChildVm
     {
-        public string FirstName { get; set; }
-        public string MiddleName { get; set; }
-        public string LastName { get; set; }
-        public string Extension { get; set; }
-        public string Occupation { get; set; }
-        public string Education { get; set; }
-        public string Gender { get; set; }
+        // Make these nullable so binder doesn't mark them required.
+        public string? FirstName { get; set; }
+        public string? MiddleName { get; set; }
+        public string? LastName { get; set; }
+        public string? Extension { get; set; }
+        public string? Occupation { get; set; }
+        public string? OccupationOther { get; set; }
+        public string? Education { get; set; }
+        public string? EducationOther { get; set; }
+        public string? Sex { get; set; }
     }
 }

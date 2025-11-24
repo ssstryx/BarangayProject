@@ -1,25 +1,17 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Collections.Generic;
+﻿namespace BarangayProject.Models;
 
-namespace BarangayProject.Models
+public class SettingsViewModel
 {
-    /// <summary>
-    /// Central settings view model used by Admin controller and Settings view.
-    /// Put this under Models to avoid naming collisions.
-    /// </summary>
-    public class SettingsViewModel
-    {
-        // Site identity
-        public string SystemName { get; set; } = "Barangay System";
-        public string? LogoPath { get; set; }
+    public string? SystemName { get; set; }
 
-        // Upload
-        public IFormFile? SiteLogoUpload { get; set; }
+    // This is the saved logo path shown in the UI (e.g. "/images/logo.png?v=12345")
+    public string? LogoPath { get; set; }
 
-        // Password reset section
-        public string? ResetUserId { get; set; }
-        public string? ResetNewPassword { get; set; }
-        public string? ResetNewPasswordConfirm { get; set; }
-    }
+    // File upload for new logo
+    public IFormFile? SiteLogoUpload { get; set; }
+
+    // for password reset block
+    public string? ResetUserId { get; set; }
+    public string? ResetNewPassword { get; set; }
+    public string? ResetNewPasswordConfirm { get; set; }
 }

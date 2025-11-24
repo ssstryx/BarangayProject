@@ -1,9 +1,17 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BarangayProject.Controllers
+public class HomeController : Controller
 {
-    public class HomeController : Controller
+    [Route("Home/Error")]
+    [AllowAnonymous]
+    public IActionResult Error()
     {
-        public IActionResult Index() => View();
+        var exFeature = HttpContext.Features.Get<IExceptionHandlerFeature>();
+        ViewBag.ErrorMessage = exFeature?.Error?.Message;
+        ViewBag.StackTrace = exFeature?.Error?.StackTrace;
+        Response.StatusCode = 500;
+        return View();
     }
 }

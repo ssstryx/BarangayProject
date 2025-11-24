@@ -1,0 +1,273 @@
+﻿@model ReportsViewModel
+@using System.Text.Json
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Reports";
+
+    // Use ViewContext.HttpContext.Request to avoid Razor scope issues
+    var req = ViewContext.HttpContext.Request;
+
+    string currentSearch = req.Query["search"].ToString() ?? "";
+    string currentFrom = req.Query["from"].ToString() ?? "";
+    string currentTo = req.Query["to"].ToString() ?? "";
+    string currentRole = req.Query["role"].ToString() ?? "";
+    string currentSitio = req.Query["sitioId"].ToString() ?? "";
+}
+
+<style>
+    /* small layout tweaks for nicer charts */
+    .chart-card {
+        height: 100%;
+    }
+
+    .chart-canvas-wrapper {
+        min-height: 260px;
+        max-height: 360px;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .donut-container {
+        width: 100%;
+        max-width: 520px;
+        margin: 0 auto;
+        height: 320px;
+    }
+    @@media (max-width: 768px) {
+        .donut-container {
+            max-width: 420px;
+            height: 260px;
+        }
+
+        .chart-canvas-wrapper {
+            min-height: 200px;
+        }
+    }
+
+    .reports-filters .form-control,
+    .reports-filters .form-select {
+        min-width: 160px;
+    }
+</style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<div class="container-fluid py-4">
+
+    <form id="reportsFiltersForm"
+          class="row g-2 align-items-center mb-3 reports-filters"
+          method="get"
+          asp-action="Reports"
+          asp-controller="Admin">
+
+        <div class="col-auto">
+            <input name="search" value="@currentSearch" class="form-control" placeholder="Type to search..." />
+        </div>
+
+        <div class="col-auto">
+            <input id="filterFrom" name="from" value="@currentFrom" class="form-control" placeholder="From (YYYY-MM-DD)" autocomplete="off" />
+        </div>
+
+        <div class="col-auto">
+            <input id="filterTo" name="to" value="@currentTo" class="form-control" placeholder="To (YYYY-MM-DD)" autocomplete="off" />
+        </div>
+
+        <div class="col-auto">
+            <select name="role" id="filterRole" class="form-select">
+                <option value="">All roles</option>
+                <option value="Admin">Admin</option>
+                <option value="BNS">BNS</option>
+                <option value="BHW">BHW</option>
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <select name="sitioId" id="filterSitio" class="form-select">
+                <option value="">All sitios</option>
+                @if (ViewBag.Sitios != null)
+                {
+                    foreach (var s in (IEnumerable<dynamic>)ViewBag.Sitios)
+                    {
+                        <option value="@s.Id">@s.Name</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a id="btnClearFilters" class="btn btn-outline-secondary">Clear</a>
+        </div>
+
+        <div class="ms-auto col-auto">
+            <a id="btnExportCsv" href="@Url.Action("ExportUsersCsv", "Admin")" class="btn btn-outline-primary btn-sm me-1">
+                <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+            </a>
+            <a id="btnExportExcel" href="@Url.Action("ExportUsersExcel", "Admin")" class="btn btn-outline-success btn-sm me-1">
+                <i class="bi bi-file-earmark-excel"></i> Excel
+            </a>
+            <a id="btnExportPdf" href="@Url.Action("ExportReportsPdf", "Admin")" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-file-earmark-pdf"></i> PDF
+            </a>
+        </div>
+    </form>
+
+    <h2 class="mb-3">Reports</h2>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="card p-3 card-hero text-center">
+                <div class="text-muted">Total Users</div>
+                <div class="stat-value">@Model.TotalUsers</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 card-hero text-center">
+                <div class="text-muted">Active Users</div>
+                <div class="stat-value text-success">@Model.ActiveUsers</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 card-hero text-center">
+                <div class="text-muted">Inactive Users</div>
+                <div class="stat-value text-danger">@Model.InactiveUsers</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 card-hero text-center">
+                <div class="text-muted">Total Sitios</div>
+                <div class="stat-value text-info">@Model.TotalSitios</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6 mb-3">
+            <div class="card p-3 chart-card">
+                <h6>Users - registrations (last 6 months)</h6>
+                <div class="chart-canvas-wrapper">
+                    <canvas id="usersLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-3">
+            <div class="card p-3 chart-card">
+                <h6>Sitio assignment</h6>
+                <div class="chart-canvas-wrapper">
+                    <div class="donut-container">
+                        <canvas id="sitiosPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-12 mb-3">
+            <div class="card p-3">
+                <h6>Recent Activity</h6>
+                <ul class="list-group list-group-flush">
+                    @foreach (var a in Model.RecentActivities)
+                    {
+                        <li class="list-group-item">
+                            <div class="small text-muted">@a.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
+                            <div>@a.Description</div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    (function () {
+        const usersLabels = @Html.Raw(JsonSerializer.Serialize(Model.UsersByMonth.Select(x => x.Label)));
+        const usersCounts = @Html.Raw(JsonSerializer.Serialize(Model.UsersByMonth.Select(x => x.Count)));
+
+        new Chart(document.getElementById('usersLineChart'), {
+            type: 'line',
+            data: {
+                labels: usersLabels,
+                datasets: [{
+                    label: 'New users',
+                    data: usersCounts,
+                    backgroundColor: 'rgba(15,122,255,0.12)',
+                    borderColor: 'rgba(15,122,255,1)',
+                    fill: true,
+                    tension: 0.3,
+                    borderWidth: 2
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        const sitiosLabelsRaw = @Html.Raw(JsonSerializer.Serialize(Model.SitiosByAssignment.Select(x => x.Label)));
+        const sitiosCounts = @Html.Raw(JsonSerializer.Serialize(Model.SitiosByAssignment.Select(x => x.Count)));
+        const total = sitiosCounts.reduce((a, b) => a + b, 0) || 1;
+        const sitiosLabels = sitiosLabelsRaw.map((l, i) => `${l} (${Math.round((sitiosCounts[i]/total)*100)}%)`);
+
+        new Chart(document.getElementById('sitiosPieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: sitiosLabels,
+                datasets: [{ data: sitiosCounts, backgroundColor: ['#2ea3ff', '#ff6b8a'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '68%' }
+        });
+    })();
+</script>
+
+<script>
+    (function () {
+        try {
+            flatpickr("#filterFrom", { dateFormat: "Y-m-d", allowInput: true });
+            flatpickr("#filterTo", { dateFormat: "Y-m-d", allowInput: true });
+        } catch (e) { /* fallback */ }
+
+        const currentRole = @Html.Raw(JsonSerializer.Serialize(currentRole));
+        const currentSitio = @Html.Raw(JsonSerializer.Serialize(currentSitio));
+
+        if (currentRole) {
+            const el = document.getElementById('filterRole');
+            if (el) el.value = currentRole;
+        }
+        if (currentSitio) {
+            const el = document.getElementById('filterSitio');
+            if (el) el.value = currentSitio;
+        }
+
+        function buildQuery() {
+            const q = new URLSearchParams();
+            new FormData(document.getElementById('reportsFiltersForm'))
+                .forEach((v, k) => { if (v && v.toString().trim() !== "") q.append(k, v); });
+            return q.toString();
+        }
+
+        function updateExportLinks() {
+            const qs = buildQuery();
+            ["btnExportCsv", "btnExportExcel", "btnExportPdf"].forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const base = el.href.split('?')[0];
+                el.href = qs ? base + '?' + qs : base;
+            });
+        }
+
+        updateExportLinks();
+        const form = document.getElementById('reportsFiltersForm');
+        form.addEventListener('input', updateExportLinks);
+        form.addEventListener('change', updateExportLinks);
+
+        document.getElementById('btnClearFilters').addEventListener('click', function (e) {
+            e.preventDefault();
+            form.querySelectorAll('input, select').forEach(el => el.value = "");
+            updateExportLinks();
+        });
+    })();
+</script>

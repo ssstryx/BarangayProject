@@ -14,7 +14,8 @@
             <h2 class="mb-1 fw-bold">Households</h2>
             <p class="text-muted mb-0">Manage registered households in the barangay.</p>
         </div>
-        <div>
+        <div class="d-flex gap-2">
+            <a asp-action="ArchivedHouseholds" class="btn btn-outline-secondary">View Archive</a>
             <a asp-action="CreateHousehold" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-1"></i> Add Household
             </a>
@@ -24,6 +25,10 @@
     @if (TempData["ErrorMessage"] != null)
     {
         <div class="alert alert-danger mt-2">@TempData["ErrorMessage"]</div>
+    }
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success mt-2">@TempData["SuccessMessage"]</div>
     }
 
     <div class="row mb-3 mt-3">
@@ -43,7 +48,7 @@
                     <tr>
                         <th style="width:140px">Household ID</th>
                         <th>Family Head</th>
-                        <th style="width:220px">Actions</th>
+                        <th style="width:260px">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,7 +64,6 @@
                         {
                             foreach (var h in Model)
                             {
-                                // Display Id or sequential index? We'll show the real Id for clarity.
                                 <tr data-familyhead="@h.FamilyHead" data-id="@h.Id">
                                     <td class="text-mono small id-cell">@h.Id</td>
                                     <td>@h.FamilyHead</td>
@@ -67,11 +71,13 @@
                                         <a asp-action="ViewHousehold" asp-route-id="@h.Id" class="btn btn-outline-primary btn-sm me-1">View</a>
                                         <a asp-action="EditHousehold" asp-route-id="@h.Id" class="btn btn-outline-warning btn-sm me-1">Edit</a>
 
-                                        <form asp-action="DeleteHousehold" method="post" class="d-inline delete-form" style="display:inline;">
+                                        <!-- Archive (soft-delete) -->
+                                        <form asp-action="ArchiveHousehold" method="post" class="d-inline archive-form" style="display:inline;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="id" value="@h.Id" />
-                                            <button type="button" class="btn btn-outline-danger btn-sm delete-btn">Delete</button>
+                                            <button type="button" class="btn btn-outline-danger btn-sm archive-btn" data-name="@h.FamilyHead">Archive</button>
                                         </form>
+
                                     </td>
                                 </tr>
                             }
@@ -98,7 +104,45 @@
 
     <script>
         (function () {
-            // Toast from TempData (server-side)
+            /***** Search button behavior (keep page fallback) *****/
+            const input = document.getElementById('householdsSearchInput');
+            document.getElementById('householdsSearchBtn').addEventListener('click', function (e) {
+                e.preventDefault();
+                const url = new URL(window.location.href);
+                url.searchParams.set('search', input.value || '');
+                window.location.href = url.pathname + url.search;
+            });
+            input.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('householdsSearchBtn').click();
+                }
+            });
+
+            /***** Archive confirmation (SweetAlert2) *****/
+            document.querySelectorAll('.archive-form').forEach(function (form) {
+                const btn = form.querySelector('.archive-btn');
+                if (!btn) return;
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const name = btn.getAttribute('data-name') || 'this household';
+                    Swal.fire({
+                        title: 'Archive household?',
+                        html: `Move <strong>${name}</strong> to archive?`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, archive',
+                        cancelButtonText: 'Cancel',
+                        confirmButtonColor: '#d33'
+                    }).then((result) => {
+                        if (!result.isConfirmed) return;
+                        // Submit the form (normal POST with antiforgery token)
+                        form.submit();
+                    });
+                });
+            });
+
+            /***** Toasts from TempData (server messages) *****/
             const succ = '@(TempData["SuccessMessage"] ?? "")';
             const err = '@(TempData["ErrorMessage"] ?? "")';
             if (succ && succ.trim() !== '') {
@@ -107,13 +151,10 @@
                 Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err, showConfirmButton: false, timer: 2800 });
             }
 
-            // Search/filter logic (ID + FamilyHead)
-            const input = document.getElementById('householdsSearchInput');
+            /***** Client-side simple filter (type to hide rows) *****/
             const table = document.getElementById('householdsTable');
-            const tbody = table.querySelector('tbody');
-
-            function normalize(s){ return (s || '').toString().toLowerCase().trim(); }
-
+            const tbody = table?.querySelector('tbody');
+            function normalize(s) { return (s || '').toString().toLowerCase().trim(); }
             function filterRows() {
                 const q = normalize(input.value);
                 const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => !r.classList.contains('no-results-placeholder'));
@@ -143,89 +184,12 @@
                 }
                 placeholder.style.display = shown === 0 ? '' : 'none';
             }
-
             let debounce = null;
             input.addEventListener('input', () => {
                 if (debounce) clearTimeout(debounce);
                 debounce = setTimeout(filterRows, 120);
             });
-
-            // Search button behavior -> update url (server-side fallback)
-            document.getElementById('householdsSearchBtn').addEventListener('click', function (e) {
-                e.preventDefault();
-                const url = new URL(window.location.href);
-                url.searchParams.set('search', input.value || '');
-                window.location.href = url.pathname + url.search;
-            });
-            input.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    document.getElementById('householdsSearchBtn').click();
-                }
-            });
-
-            // Delete using fetch + antiforgery token (same logic for all delete forms)
-            function getAntiForgeryToken(form) {
-                const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
-                return tokenInput ? tokenInput.value : null;
-            }
-
-            function removeRow(row) {
-                row.remove();
-                filterRows();
-            }
-
-            document.querySelectorAll('.delete-form').forEach(function (form) {
-                const btn = form.querySelector('.delete-btn');
-                if (!btn) return;
-                btn.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const row = form.closest('tr');
-                    const name = row?.dataset.familyhead || row?.querySelector('td:nth-child(2)')?.innerText?.trim() || 'this household';
-
-                    Swal.fire({
-                        title: 'Delete household?',
-                        html: `Delete <strong>${name}</strong>? This cannot be undone.`,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, delete',
-                        cancelButtonText: 'Cancel',
-                        confirmButtonColor: '#d33'
-                    }).then(async (result) => {
-                        if (!result.isConfirmed) return;
-
-                        const action = form.getAttribute('action') || window.location.href;
-                        const formData = new FormData();
-                        const idInput = form.querySelector('input[name="id"]');
-                        if (idInput) formData.append('id', idInput.value);
-                        const token = getAntiForgeryToken(form);
-                        if (token) formData.append('__RequestVerificationToken', token);
-
-                        try {
-                            const resp = await fetch(action, {
-                                method: 'POST',
-                                body: formData,
-                                credentials: 'same-origin',
-                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                            });
-
-                            if (!resp.ok) {
-                                const txt = await resp.text().catch(()=>'');
-                                Swal.fire('Error', txt || 'Delete failed on server.', 'error');
-                                return;
-                            }
-
-                            removeRow(row);
-                            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Household deleted', showConfirmButton: false, timer: 1500 });
-                        } catch (ex) {
-                            console.error(ex);
-                            Swal.fire('Error', 'Network error while deleting.', 'error');
-                        }
-                    });
-                });
-            });
-
-            // initial run to hide placeholder if rows exist
+            // run once to hide placeholder when rows exist
             filterRows();
         })();
     </script>

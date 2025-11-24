@@ -51,6 +51,9 @@ namespace BarangayProject.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<bool>("IsAdmin")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("tinyint(1)");
 
@@ -165,8 +168,18 @@ namespace BarangayProject.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    b.Property<string>("Details")
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ArchivedBy")
                         .IsRequired()
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Details")
                         .HasMaxLength(191)
                         .HasColumnType("varchar(191)");
 
@@ -175,9 +188,164 @@ namespace BarangayProject.Migrations
                         .HasMaxLength(191)
                         .HasColumnType("varchar(191)");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Households");
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.HouseholdHealth", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<bool>("BottleFed")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("ExclusiveBreastfeeding")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("FamilyPlanning")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("HouseholdId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("MixedFeeding")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("MotherPregnant")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("OthersFeeding")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("OthersFeedingSpecify")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<bool>("UsingIFR")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("UsingIodizedSalt")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HouseholdId")
+                        .IsUnique();
+
+                    b.ToTable("HouseholdHealth");
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.HouseholdSanitation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("FoodProductionActivity")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("FoodProductionActivityOther")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<int>("HouseholdId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ToiletType")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("ToiletTypeOther")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("WaterSource")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("WaterSourceOther")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HouseholdId")
+                        .IsUnique();
+
+                    b.ToTable("HouseholdSanitation");
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.Resident", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("Education")
+                        .IsRequired()
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("EducationOther")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("Extension")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<int>("HouseholdId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("MiddleName")
+                        .IsRequired()
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("Occupation")
+                        .IsRequired()
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("OccupationOther")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("Sex")
+                        .IsRequired()
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HouseholdId");
+
+                    b.ToTable("Residents");
                 });
 
             modelBuilder.Entity("BarangayProject.Models.Sitio", b =>
@@ -455,6 +623,39 @@ namespace BarangayProject.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("BarangayProject.Models.HouseholdHealth", b =>
+                {
+                    b.HasOne("BarangayProject.Models.Household", "Household")
+                        .WithOne("Health")
+                        .HasForeignKey("BarangayProject.Models.HouseholdHealth", "HouseholdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Household");
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.HouseholdSanitation", b =>
+                {
+                    b.HasOne("BarangayProject.Models.Household", "Household")
+                        .WithOne("Sanitation")
+                        .HasForeignKey("BarangayProject.Models.HouseholdSanitation", "HouseholdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Household");
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.Resident", b =>
+                {
+                    b.HasOne("BarangayProject.Models.Household", "Household")
+                        .WithMany("Residents")
+                        .HasForeignKey("HouseholdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Household");
+                });
+
             modelBuilder.Entity("BarangayProject.Models.Sitio", b =>
                 {
                     b.HasOne("BarangayProject.Models.ApplicationUser", "AssignedBhw")
@@ -535,6 +736,15 @@ namespace BarangayProject.Migrations
 
                     b.Navigation("Profile")
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.Household", b =>
+                {
+                    b.Navigation("Health");
+
+                    b.Navigation("Residents");
+
+                    b.Navigation("Sanitation");
                 });
 #pragma warning restore 612, 618
         }

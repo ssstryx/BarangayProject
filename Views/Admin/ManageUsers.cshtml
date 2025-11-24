@@ -12,7 +12,6 @@
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
             <h2 class="mb-1 fw-bold">Manage Users</h2>
-            <p class="text-muted mb-0">Manage the accounts in the system.</p>
         </div>
         <div>
             <a asp-action="AddUser" class="btn btn-primary">
@@ -28,9 +27,10 @@
 
     <div class="row mb-3 mt-3">
         <div class="col-md-8">
-            <form method="get" class="d-flex" id="usersSearchForm" onsubmit="return false;">
-                <input id="usersSearchInput" name="search" value="@currentSearch" class="form-control me-2" placeholder="Type to search (Email, Name)..." autocomplete="off" />
-                <button id="usersSearchBtn" class="btn btn-primary me-2">Search</button>
+            <!-- removed onsubmit="return false;" so the form will submit normally to the controller -->
+            <form method="get" class="d-flex" id="usersSearchForm">
+                <input id="usersSearchInput" name="search" value="@currentSearch" class="form-control me-2" placeholder="Type to search..." autocomplete="off" />
+                <button id="usersSearchBtn" class="btn btn-primary me-2" type="submit">Search</button>
                 <a class="btn btn-outline-secondary" href="@Url.Action("ManageUsers", "Admin")">Clear</a>
             </form>
         </div>
@@ -41,7 +41,7 @@
             <table id="usersTable" class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th style="width:120px">User ID</th>            
+                        <th style="width:120px">User ID</th>
                         <th>Email</th>
                         <th>Name</th>
                         <th>Roles</th>
@@ -55,7 +55,7 @@
                         if (!any)
                         {
                             <tr class="no-results-placeholder">
-                                <td colspan="6" class="text-center text-muted py-4">No users found.</td> <!-- updated colspan -->
+                                <td colspan="6" class="text-center text-muted py-4">No users found.</td>
                             </tr>
                         }
                         else
@@ -64,7 +64,7 @@
                             foreach (var u in Model)
                             {
                                 <tr data-email="@u.Email" data-name="@u.FullName" data-userid="@u.UserId">
-                                    <td class="text-mono small id-cell">@idx</td> <!-- show sequential index -->
+                                    <td class="text-mono small id-cell">@idx</td>
                                     <td>@u.Email</td>
                                     <td>@u.FullName</td>
                                     <td><span class="badge bg-primary">@u.Role</span></td>
@@ -93,12 +93,6 @@
                                             {
                                                 <button type="submit" class="btn btn-danger btn-sm">Deactivate</button>
                                             }
-                                        </form>
-
-                                        <form asp-action="DeleteUser" method="post" class="d-inline delete-form">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@u.UserId" />
-                                            <button type="button" class="btn btn-outline-danger btn-sm delete-btn">Delete</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -136,141 +130,18 @@
                 Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err, showConfirmButton: false, timer: 2800 });
             }
 
-            // Live client-side filter (email + name only) + re-number ID column
-            const input = document.getElementById('usersSearchInput');
-            const table = document.getElementById('usersTable');
-            const tbody = table.querySelector('tbody');
-
-            function normalize(s){ return (s || '').toString().toLowerCase().trim(); }
-
-            function renumberVisibleRows() {
-                const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => !r.classList.contains('no-results-placeholder'));
-                let counter = 1;
-                rows.forEach(r => {
-                    if (r.style.display === 'none') return;
-                    const idCell = r.querySelector('.id-cell');
-                    if (idCell) idCell.textContent = counter;
-                    counter++;
-                });
+            // No client-side live filtering — searches are performed server-side when the form is submitted.
+            // Keep script minimal; we ensure the search button is a submit and let Enter submit the form naturally.
+            const usersSearchForm = document.getElementById('usersSearchForm');
+            if (usersSearchForm) {
+                usersSearchForm.onsubmit = null; // defensive: ensure no JS prevents submission
+            }
+            const usersSearchBtn = document.getElementById('usersSearchBtn');
+            if (usersSearchBtn) {
+                usersSearchBtn.type = 'submit';
             }
 
-            function filterRows() {
-                const q = normalize(input.value);
-                const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => !r.classList.contains('no-results-placeholder'));
-                let shown = 0;
-                rows.forEach(r => {
-                    const email = normalize(r.dataset.email);
-                    const name = normalize(r.dataset.name);
-                    if (!q || email.includes(q) || name.includes(q)) {
-                        r.style.display = '';
-                        shown++;
-                    } else {
-                        r.style.display = 'none';
-                    }
-                });
-
-                // placeholder
-                let placeholder = tbody.querySelector('.no-results-placeholder');
-                if (!placeholder) {
-                    placeholder = document.createElement('tr');
-                    placeholder.className = 'no-results-placeholder';
-                    const td = document.createElement('td');
-                    td.colSpan = 6; // match column count
-                    td.className = 'text-center text-muted py-4';
-                    td.innerText = 'No users found.';
-                    placeholder.appendChild(td);
-                    tbody.appendChild(placeholder);
-                }
-                placeholder.style.display = shown === 0 ? '' : 'none';
-
-                // renumber visible rows so ID column works like sitio numbering
-                renumberVisibleRows();
-            }
-
-            let debounce = null;
-            input.addEventListener('input', () => {
-                if (debounce) clearTimeout(debounce);
-                debounce = setTimeout(filterRows, 120);
-            });
-
-            // server search on Search button or Enter
-            document.getElementById('usersSearchBtn').addEventListener('click', function (e) {
-                e.preventDefault();
-                const url = new URL(window.location.href);
-                url.searchParams.set('search', input.value || '');
-                window.location.href = url.pathname + url.search;
-            });
-            input.addEventListener('keypress', function (e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    document.getElementById('usersSearchBtn').click();
-                }
-            });
-
-            // Delete using fetch + antiforgery token (same logic for all delete forms)
-            function getAntiForgeryToken(form) {
-                const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
-                return tokenInput ? tokenInput.value : null;
-            }
-
-            function removeRowAndMaybeShowPlaceholder(row) {
-                row.remove();
-                // re-run filter to update placeholder visibility and re-number
-                filterRows();
-            }
-
-            document.querySelectorAll('.delete-form').forEach(function (form) {
-                const btn = form.querySelector('.delete-btn');
-                if (!btn) return;
-                btn.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    const row = form.closest('tr');
-                    const name = row?.dataset.name || row?.querySelector('td:nth-child(3)')?.innerText?.trim() || 'this user';
-
-                    Swal.fire({
-                        title: 'Delete user?',
-                        html: `Delete <strong>${name}</strong>? This cannot be undone.`,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Yes, delete',
-                        cancelButtonText: 'Cancel',
-                        confirmButtonColor: '#d33'
-                    }).then(async (result) => {
-                        if (!result.isConfirmed) return;
-
-                        const action = form.getAttribute('action') || window.location.href;
-                        const formData = new FormData();
-                        const idInput = form.querySelector('input[name="id"]');
-                        if (idInput) formData.append('id', idInput.value);
-                        const token = getAntiForgeryToken(form);
-                        if (token) formData.append('__RequestVerificationToken', token);
-
-                        try {
-                            const resp = await fetch(action, {
-                                method: 'POST',
-                                body: formData,
-                                credentials: 'same-origin',
-                                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                            });
-
-                            if (!resp.ok) {
-                                const txt = await resp.text().catch(()=>'');
-                                Swal.fire('Error', txt || 'Delete failed on server.', 'error');
-                                return;
-                            }
-
-                            removeRowAndMaybeShowPlaceholder(row);
-                            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'User deleted', showConfirmButton: false, timer: 1500 });
-                        } catch (ex) {
-                            console.error(ex);
-                            Swal.fire('Error', 'Network error while deleting.', 'error');
-                        }
-                    });
-                });
-            });
-
-            // initial run to hide placeholder if rows exist and renumber current visible rows
-            filterRows();
+            // No delete handlers here (delete UI removed).
         })();
     </script>
 }

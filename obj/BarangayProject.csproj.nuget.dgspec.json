@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Admin\\source\\repos\\BarangayProject\\BarangayProject.csproj": {}
+    "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\BarangayProject.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Admin\\source\\repos\\BarangayProject\\BarangayProject.csproj": {
+    "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\BarangayProject.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\BarangayProject.csproj",
+        "projectUniqueName": "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\BarangayProject.csproj",
         "projectName": "BarangayProject",
-        "projectPath": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\BarangayProject.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\obj\\",
+        "projectPath": "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\BarangayProject.csproj",
+        "packagesPath": "C:\\Users\\Jepsie\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Jepsie\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -45,12 +45,16 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "ClosedXML": {
+              "target": "Package",
+              "version": "[0.105.0, )"
+            },
             "Microsoft.AspNetCore.Authentication.Cookies": {
               "target": "Package",
               "version": "[2.3.0, )"
@@ -86,6 +90,10 @@
             "Pomelo.EntityFrameworkCore.MySql": {
               "target": "Package",
               "version": "[8.0.0, )"
+            },
+            "QuestPDF": {
+              "target": "Package",
+              "version": "[2025.7.4, )"
             }
           },
           "imports": [
@@ -107,7 +115,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.100/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

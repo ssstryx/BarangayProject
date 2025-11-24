@@ -11,6 +11,8 @@ namespace BarangayProject.Models
         public DateTime? ModifiedAt { get; set; }
         public bool IsActive { get; set; } = true;
 
+        public bool IsAdmin { get; set; } = false;
+
         // Navigation property to the profile
         public UserProfile Profile { get; set; }
 

@@ -1,0 +1,81 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\jepsie\\source\\repos\\barangayproject\\models\\createhouseholdvm.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:models\\createhouseholdvm.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\jepsie\\source\\repos\\barangayproject\\controllers\\bhwcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:controllers\\bhwcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\jepsie\\source\\repos\\barangayproject\\views\\bhw\\createhousehold.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:views\\bhw\\createhousehold.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 3,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "CreateHouseholdVm.cs",
+              "DocumentMoniker": "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\Models\\CreateHouseholdVm.cs",
+              "RelativeDocumentMoniker": "Models\\CreateHouseholdVm.cs",
+              "ToolTip": "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\Models\\CreateHouseholdVm.cs",
+              "RelativeToolTip": "Models\\CreateHouseholdVm.cs",
+              "ViewState": "AgIAAC8AAAAAAAAAAAA+wDcAAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-24T08:41:27.729Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "CreateHousehold.cshtml",
+              "DocumentMoniker": "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\Views\\Bhw\\CreateHousehold.cshtml",
+              "RelativeDocumentMoniker": "Views\\Bhw\\CreateHousehold.cshtml",
+              "ToolTip": "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\Views\\Bhw\\CreateHousehold.cshtml",
+              "RelativeToolTip": "Views\\Bhw\\CreateHousehold.cshtml",
+              "ViewState": "AgIAAPABAAAAAAAAAAAswBoCAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-24T07:28:57.137Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "BhwController.cs",
+              "DocumentMoniker": "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\Controllers\\BhwController.cs",
+              "RelativeDocumentMoniker": "Controllers\\BhwController.cs",
+              "ToolTip": "C:\\Users\\Jepsie\\source\\repos\\BarangayProject\\Controllers\\BhwController.cs",
+              "RelativeToolTip": "Controllers\\BhwController.cs",
+              "ViewState": "AgIAABECAAAAAAAAAAAAABoCAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-24T06:53:53.287Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

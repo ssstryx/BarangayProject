@@ -7,7 +7,8 @@
 
 <div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <!-- wider column on large screens -->
+        <div class="col-lg-9 col-md-10">
 
             <h3 class="mb-4 text-center">Add User</h3>
 
@@ -23,39 +24,44 @@
             <form asp-action="AddUser" method="post" novalidate id="addUserForm">
                 @Html.AntiForgeryToken()
 
-                <div class="card shadow-sm">
+                <div class="card shadow-sm no-border mx-auto styled-card">
                     <div class="card-body">
                         <div class="mb-3">
-                            <label asp-for="FirstName" class="form-label"></label>
+                            <label asp-for="FirstName" class="form-label">First Name</label>
                             <input asp-for="FirstName" class="form-control" />
                             <span asp-validation-for="FirstName" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="MiddleName" class="form-label"></label>
+                            <label asp-for="MiddleName" class="form-label">Middle Name</label>
                             <input asp-for="MiddleName" class="form-control" />
                             <span asp-validation-for="MiddleName" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="LastName" class="form-label"></label>
+                            <label asp-for="LastName" class="form-label">Last Name</label>
                             <input asp-for="LastName" class="form-control" />
                             <span asp-validation-for="LastName" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Email" class="form-label"></label>
+                            <label asp-for="Email" class="form-label">Email</label>
                             <input asp-for="Email" class="form-control" placeholder="example@gmail.com" />
                             <span asp-validation-for="Email" class="text-danger small"></span>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label asp-for="Password" class="form-label"></label>
-                                <div class="input-group">
-                                    <input asp-for="Password" type="password" class="form-control" id="addPassword" autocomplete="new-password" />
-                                    <button type="button" class="btn btn-outline-secondary" id="toggleAddPw" tabindex="-1" aria-label="Toggle password visibility"><i class="bi bi-eye"></i></button>
+                                <label asp-for="Password" class="form-label">Password</label>
+
+                                <!-- cleaner input-with-icon (no heavy border, nice eye) -->
+                                <div class="input-with-icon clean">
+                                    <input asp-for="Password" type="password" class="form-control clean-input" id="addPassword" autocomplete="new-password" />
+                                    <button type="button" class="btn-eye clean-eye" id="toggleAddPw" aria-label="Toggle password visibility" tabindex="-1">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
                                 </div>
+
                                 <span asp-validation-for="Password" class="text-danger small"></span>
 
                                 <div id="addPwStrength" class="small text-success mt-1" style="display:none;">Good password</div>
@@ -66,22 +72,25 @@
 
                             <div class="col-md-6 mb-3">
                                 <label asp-for="ConfirmPassword" class="form-label">Confirm Password</label>
-                                <div class="input-group">
-                                    <input asp-for="ConfirmPassword" type="password" class="form-control" id="addConfirmPassword" autocomplete="new-password" />
-                                    <button type="button" class="btn btn-outline-secondary" id="toggleAddConfirmPw" tabindex="-1" aria-label="Toggle confirm password visibility"><i class="bi bi-eye"></i></button>
+
+                                <div class="input-with-icon clean">
+                                    <input asp-for="ConfirmPassword" type="password" class="form-control clean-input" id="addConfirmPassword" autocomplete="new-password" />
+                                    <button type="button" class="btn-eye clean-eye" id="toggleAddConfirmPw" aria-label="Toggle confirm password visibility" tabindex="-1">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
                                 </div>
+
                                 <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
                                 <div id="addConfirmError" class="small text-danger mt-1" style="display:none;">Passwords do not match.</div>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Role" class="form-label"></label>
-                            <select asp-for="Role" class="form-select">
+                            <label asp-for="Role" class="form-label">Role</label>
+                            <select asp-for="Role" class="form-select full-width-select">
                                 <option value="">-- Select Role --</option>
-                                <option value="Admin">Admin</option>
-                                <option value="BNS">BNS</option>
-                                <option value="BHW">BHW</option>
+                                <option value="BNS">Barangay Nutrition Scholar</option>
+                                <option value="BHW">Barangay Health Worker</option>
                             </select>
                             <span asp-validation-for="Role" class="text-danger small"></span>
                         </div>
@@ -97,6 +106,113 @@
         </div>
     </div>
 </div>
+
+<style>
+    /* center + comfortable max width so it's not "bitin" */
+    .styled-card {
+        max-width: 920px; /* increase as desired */
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 10px;
+    }
+
+    /* remove heavy card border */
+    .card.no-border {
+        border: none;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+        .card.no-border .card-body {
+            padding: 1.4rem;
+        }
+
+        .card.no-border .card-footer {
+            background: #fff;
+            border-top: 1px solid #f1f3f5;
+        }
+
+    /* make selects and inputs full width */
+    .full-width-select {
+        width: 100%;
+    }
+
+    /* Clean input look for password fields */
+    .input-with-icon.clean {
+        position: relative;
+        display: block;
+    }
+
+    .clean-input {
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 8px;
+        padding: .6rem .9rem;
+        padding-right: 46px; /* space for the eye */
+        height: 44px;
+        box-shadow: none;
+        transition: box-shadow .08s, border-color .08s;
+        background: #fff;
+        width: 100%;
+    }
+
+        .clean-input:focus {
+            outline: none;
+            border-color: rgba(13,110,253,0.25);
+            box-shadow: 0 0 0 0.12rem rgba(13,110,253,0.06);
+        }
+
+    /* sleek eye button inside input */
+    .btn-eye.clean-eye {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: none;
+        background: #ffffff;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        color: #495057;
+        cursor: pointer;
+        transition: background .12s, transform .06s;
+    }
+
+        .btn-eye.clean-eye i {
+            font-size: 16px;
+        }
+
+        .btn-eye.clean-eye:hover {
+            background: #f5f7fb;
+            transform: translateY(-50%) scale(1.02);
+        }
+
+        .btn-eye.clean-eye:active {
+            transform: translateY(-50%) scale(.98);
+        }
+
+    /* spacing improvements */
+    @@media (max-width: 767px) {
+        .styled-card {
+            padding-left: .6rem;
+            padding-right: .6rem;
+            max-width: 100%;
+        }
+
+        .clean-input {
+            padding-right: 44px;
+        }
+
+        .btn-eye.clean-eye {
+            width: 34px;
+            height: 34px;
+        }
+    }
+</style>
 
 @section Scripts {
     @Html.Partial("_ValidationScriptsPartial")
@@ -148,7 +264,6 @@
             }
 
             function updateSaveState() {
-                // If password fields are empty, allow submit (other server-side validation will handle)
                 const anyPw = (pw.value && pw.value.length > 0) || (confirmPw.value && confirmPw.value.length > 0);
                 if (!anyPw) {
                     saveBtn.disabled = false;
@@ -193,7 +308,6 @@
                 }
             });
 
-            // Prevent submit if password rules fail (only when any password provided)
             form.addEventListener('submit', function (e) {
                 const anyPw = (pw.value && pw.value.length > 0) || (confirmPw.value && confirmPw.value.length > 0);
                 if (!anyPw) return;
@@ -210,7 +324,6 @@
                 }
             });
 
-            // initial
             updateSaveState();
         })();
     </script>

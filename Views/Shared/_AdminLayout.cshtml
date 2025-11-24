@@ -201,6 +201,15 @@
                 word-break: break-word;
             }
 
+            /* ---------- changed: remove "Logged in as:" text and style the role line ---------- */
+            .sidebar .logged-role {
+                text-align: center;
+                margin-top: 6px;
+                font-size: 0.95rem;
+                color: rgba(255,255,255,0.95);
+                font-weight: 600;
+            }
+
             .sidebar nav a {
                 display: block;
                 padding: 12px 20px;
@@ -233,43 +242,34 @@
                         color: #072054;
                     }
 
-            .sidebar .logout-btn {
-                padding: 0;
-                margin-top: 8px;
+            /* ---------- changed: logout area at bottom with white button ---------- */
+            .sidebar .logout-bottom {
+                padding: 16px;
+                background: transparent;
+                border-top: 0;
             }
 
-                .sidebar .logout-btn button {
-                    width: 100%;
-                    text-align: left;
-                    padding: 12px 20px;
-                    border: none;
-                    background: transparent;
-                    color: rgba(248,250,252,0.95);
-                    font-weight: 500;
-                    border-radius: 8px;
+                .sidebar .logout-bottom form {
+                    margin: 0;
                 }
 
-                    .sidebar .logout-btn button:hover {
-                        background-color: rgba(255,255,255,0.06);
-                    }
-
-            .sidebar .sidebar-footer {
-                padding: 12px 16px;
-                font-size: 0.92rem;
-                background: var(--footer-bg);
-                border-top: 1px solid var(--footer-border);
-                color: rgba(5,19,55,0.95);
+            .sidebar .logout-btn-white {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 12px;
+                border-radius: 10px;
+                border: 0;
+                background: #ffffff;
+                color: #072054;
+                font-weight: 700;
+                box-shadow: 0 6px 18px rgba(3, 37, 99, 0.12);
             }
 
-                .sidebar .sidebar-footer .name {
-                    font-weight: 700;
-                    color: #072054;
-                }
-
-                .sidebar .sidebar-footer .email {
-                    font-size: 0.88rem;
-                    color: rgba(6,18,45,0.85);
-                    margin-bottom: 4px;
+                .sidebar .logout-btn-white i {
+                    font-size: 1.05rem;
                 }
 
         .main-content {
@@ -307,7 +307,7 @@
                 padding: 18px;
             }
 
-            .sidebar .sidebar-footer {
+            .sidebar .logout-bottom {
                 position: relative;
                 bottom: auto;
             }
@@ -337,35 +337,35 @@
             <div class="logo">
                 <img src="@(logoPath)" alt="Barangay Logo" onerror="this.onerror=null;this.src='/images/logo.png';" />
                 <h4>@Html.Raw($"{siteLine1} {siteLine2}".Trim())</h4>
-                
+
+                @{
+                    // show only role under system name (no "Logged in as:" text)
+                    var userManager = Context.RequestServices.GetService<UserManager<BarangayProject.Models.ApplicationUser>>();
+                    var user = await userManager.GetUserAsync(User);
+                    var roles = user != null ? await userManager.GetRolesAsync(user) : new List<string>();
+                    var role = roles.FirstOrDefault() ?? "User";
+                }
+                <div class="logged-role"><strong>@role</strong></div>
             </div>
 
             <nav class="mb-3">
                 <a asp-controller="Admin" asp-action="Index" class='@IsActive("Admin", "Index")'><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
                 <a asp-controller="Admin" asp-action="ManageUsers" class='@IsActive("Admin", "ManageUsers")'><i class="bi bi-people me-2"></i> Manage Users</a>
                 <a asp-controller="Admin" asp-action="ManageSitios" class='@IsActive("Admin", "ManageSitios")'><i class="bi bi-geo-alt me-2"></i> Manage Sitios</a>
+                <a asp-controller="Admin" asp-action="Reports" class='@IsActive("Admin", "Reports")'><i class="bi bi-bar-chart-line me-2"></i> Reports</a>
                 <a asp-controller="Admin" asp-action="Settings" class='@IsActive("Admin", "Settings")'><i class="bi bi-gear me-2"></i> Settings</a>
             </nav>
 
-            <hr class="bg-light" />
-
-            <div class="logout-btn">
-                <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post">
-                    @Html.AntiForgeryToken()
-                    <button type="button" id="logoutButton"><i class="bi bi-box-arrow-right me-2"></i> Logout</button>
-                </form>
-            </div>
+            @* Removed the horizontal rule as requested *@
         </div>
 
-        <footer class="sidebar-footer text-center small fw-semibold" style="background: rgba(255,255,255,0.08); border-top: 1px solid rgba(255,255,255,0.15); color: #e8ecff;">
-            @{
-                var userManager = Context.RequestServices.GetService<UserManager<BarangayProject.Models.ApplicationUser>>();
-                var user = await userManager.GetUserAsync(User);
-                var roles = user != null ? await userManager.GetRolesAsync(user) : new List<string>();
-                var role = roles.FirstOrDefault() ?? "User";
-            }
-            <div>Logged in as: <span class="fw-bold text-white">@role</span></div>
-        </footer>
+        @* Logout area moved to bottom with white centered button *@
+        <div class="logout-bottom">
+            <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post">
+                @Html.AntiForgeryToken()
+                <button type="button" id="logoutButton" class="logout-btn-white"><i class="bi bi-box-arrow-right"></i> Logout</button>
+            </form>
+        </div>
     </div>
 
     <div class="main-content">
@@ -392,7 +392,7 @@
                 </div>
                 <div class="modal-footer border-0">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" id="confirmLogout" class="btn btn-danger">Yes, log me out</button>
+                    <button type="button" id="confirmLogout" class="btn btn-danger">Logout</button>
                 </div>
             </div>
         </div>
