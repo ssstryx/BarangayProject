@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using BarangayProject.Models;
+using BarangayProject.Models.AdminModel;
 
 namespace BarangayProject.Data
 {

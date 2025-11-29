@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace BarangayProject.Models
+namespace BarangayProject.Models.AdminModel
 {
     public class SystemConfiguration
     {

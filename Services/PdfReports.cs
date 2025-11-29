@@ -7,7 +7,7 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using QuestPDF.Drawing;
 using QuestPDF.Elements;
-using BarangayProject.Models; // adjust if your ApplicationUser/Sitio live in other namespace
+using BarangayProject.Models.AdminModel; // adjust if your ApplicationUser/Sitio live in other namespace
 
 namespace BarangayProject
 {

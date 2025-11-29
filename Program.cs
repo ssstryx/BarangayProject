@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using BarangayProject.Data;
-using BarangayProject.Models;
+using BarangayProject.Models.AdminModel;
 using BarangayProject.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

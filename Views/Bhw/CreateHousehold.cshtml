@@ -1,14 +1,62 @@
-﻿@model BarangayProject.Models.CreateHouseholdVm
+﻿@using BarangayProject.Models.BhwModel
+@model CreateHouseholdVm
+
 @{
     Layout = "~/Views/Shared/_BhwLayout.cshtml";
     ViewData["Title"] = "Add Household";
 }
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+
+<style>
+    /* compact, consistent form visuals */
+    .card.form-section { padding: 1.05rem; border-radius: .5rem; }
+    .form-label.small { font-size: .88rem; font-weight: 600; color:#333; }
+    .form-control.form-control-sm, .form-select.form-select-sm {
+        height: 40px;
+        padding: .45rem .6rem;
+        font-size: .95rem;
+    }
+    .input-age { width: 90px; text-align:center; }
+    #addChildBtn { height: 38px; }
+
+    /* make child card visually match parent's card */
+    .child-row {
+        background: #fff;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 8px;
+    }
+
+        /* make the remove button float top-right */
+        .child-row .remove-child {
+            /* we already position it inline in markup, but keep fallback */
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 2;
+        }
+
+        /* slightly larger inputs to match the parent styling */
+        .child-row .form-control.form-control-sm,
+        .child-row .form-select.form-select-sm {
+            height: 40px;
+            padding: .45rem .6rem;
+        }
+
+        /* compact age */
+        .child-row .child-age {
+            width: 86px;
+            text-align: center;
+        }
+
+    @@media (max-width:768px) { .input-age { width:72px; } .form-control.form-control-sm { height:38px; } }
+</style>
+
 <div class="container-fluid py-3">
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
             <h2 class="mb-1 fw-bold">Add Household</h2>
-            <p class="text-muted mb-0">Fill in household information.</p>
+            <p class="text-muted mb-0">Update household information.</p>
         </div>
     </div>
 
@@ -27,146 +75,127 @@
             }
         </div>
 
-        <!-- -------------------- Parents -------------------- -->
-        <h5 class="mt-3 mb-2">Basic Information</h5>
+        <h5 class="section-title">Basic Information</h5>
 
         <!-- Father -->
-        <div class="card mb-3 p-3">
+        <div class="card form-section mb-3">
             <h6 class="mb-2">Father's Information</h6>
-            <div class="row gx-2 gy-2">
+
+            <div class="row gx-2 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label small">First Name</label>
                     <input asp-for="FatherFirstName" class="form-control form-control-sm" />
                 </div>
-                <div class="col-md-3">
+
+                <div class="col-md-2">
                     <label class="form-label small">Middle Name</label>
                     <input asp-for="FatherMiddleName" class="form-control form-control-sm" />
                 </div>
+
                 <div class="col-md-3">
                     <label class="form-label small">Last Name</label>
                     <input asp-for="FatherLastName" class="form-control form-control-sm" />
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label small">Extension</label>
+
+                <div class="col-md-1">
+                    <label class="form-label small">Ext</label>
                     <input asp-for="FatherExtension" class="form-control form-control-sm" />
                 </div>
 
-                <!-- Occupation dropdown + specify -->
-                <div class="col-md-6 mt-1">
+                <div class="col-md-2">
+                    <label class="form-label small">Date of Birth</label>
+                    <input asp-for="MotherDateOfBirth" type="date" class="form-control form-control-sm parent-dob" id="MotherDateOfBirth" />
+                </div>
+
+                <div class="col-md-1">
+                    <label class="form-label small">Age</label>
+                    <input asp-for="FatherAge" class="form-control form-control-sm input-age" id="FatherAge" readonly />
+                </div>
+            </div>
+
+            <div class="row gx-2 mt-2">
+                <div class="col-md-6">
                     <label class="form-label small">Occupation</label>
                     <select asp-for="FatherOccupation" class="form-select form-select-sm parent-occupation-select" id="FatherOccupationSelect">
                         <option value="">Select...</option>
-                        <option>Unemployed</option>
-                        <option>Student</option>
-                        <option>Housewife / Housekeeper</option>
-                        <option>Farmer</option>
-                        <option>Fisherman</option>
-                        <option>Driver</option>
-                        <option>Laborer</option>
-                        <option>Vendor</option>
-                        <option>Teacher</option>
-                        <option>Nurse</option>
-                        <option>Office Worker / Clerk</option>
-                        <option>Construction Worker</option>
-                        <option>Security Guard</option>
-                        <option>Business Owner</option>
-                        <option>Factory Worker</option>
-                        <option>Carpenter</option>
-                        <option>Electrician</option>
-                        <option>Plumber</option>
-                        <option>Others</option>
+                        <option>Unemployed</option><option>Student</option><option>Housewife / Housekeeper</option><option>Farmer</option><option>Fisherman</option><option>Driver</option><option>Laborer</option><option>Vendor</option><option>Teacher</option><option>Nurse</option><option>Office Worker / Clerk</option><option>Construction Worker</option><option>Security Guard</option><option>Business Owner</option><option>Factory Worker</option><option>Carpenter</option><option>Electrician</option><option>Plumber</option><option>Others</option>
                     </select>
-                    <input asp-for="FatherOccupationOther" class="form-control form-control-sm mt-2 parent-occupation-other" id="FatherOccupationOther" placeholder="Please specify occupation" style="display:none;" />
+                    <input asp-for="FatherOccupationOther" id="FatherOccupationOther" class="form-control form-control-sm mt-2 parent-occupation-other" placeholder="Please specify occupation" style="display:none;" />
                 </div>
 
-                <!-- Education dropdown + specify -->
-                <div class="col-md-6 mt-1">
+                <div class="col-md-6">
                     <label class="form-label small">Educational Attainment</label>
-                    <select asp-for="FatherEducation" class="form-select form-select-sm parent-education-select" id="FatherEducationSelect">
+                    <select asp-for="FatherEducation" class="form-select form-select-sm" id="FatherEducationSelect">
                         <option value="">Select...</option>
-                        <option>Elementary Graduate</option>
-                        <option>High School Graduate</option>
-                        <option>College Graduate</option>
-                        <option>Vocational / Technical Graduate</option>
-                        <option>Others</option>
+                        <option>Elementary Graduate</option><option>High School Graduate</option><option>College Graduate</option><option>Vocational / Technical Graduate</option><option>Others</option>
                     </select>
-                    <input asp-for="FatherEducationOther" class="form-control form-control-sm mt-2 parent-education-other" id="FatherEducationOther" placeholder="Please specify educational attainment" style="display:none;" />
+                    <input asp-for="FatherEducationOther" id="FatherEducationOther" class="form-control form-control-sm mt-2 parent-education-other" placeholder="Please specify" style="display:none;" />
                 </div>
-
-                <!-- hidden sex -->
-                <input type="hidden" asp-for="FatherSex" value="Male" />
             </div>
+
+            <input type="hidden" asp-for="FatherSex" value="Male" />
         </div>
 
         <!-- Mother -->
-        <div class="card mb-3 p-3">
+        <div class="card form-section mb-3">
             <h6 class="mb-2">Mother's Information</h6>
-            <div class="row gx-2 gy-2">
+
+            <div class="row gx-2 align-items-end">
                 <div class="col-md-3">
                     <label class="form-label small">First Name</label>
                     <input asp-for="MotherFirstName" class="form-control form-control-sm" />
                 </div>
-                <div class="col-md-3">
+
+                <div class="col-md-2">
                     <label class="form-label small">Middle Name</label>
                     <input asp-for="MotherMiddleName" class="form-control form-control-sm" />
                 </div>
+
                 <div class="col-md-3">
                     <label class="form-label small">Last Name</label>
                     <input asp-for="MotherLastName" class="form-control form-control-sm" />
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label small">Extension</label>
+
+                <div class="col-md-1">
+                    <label class="form-label small">Ext</label>
                     <input asp-for="MotherExtension" class="form-control form-control-sm" />
                 </div>
 
-                <!-- Occupation dropdown + specify -->
-                <div class="col-md-6 mt-1">
+                <div class="col-md-2">
+                    <label class="form-label small">Date of Birth</label>
+                    <input asp-for="MotherDateOfBirth" type="date" class="form-control form-control-sm parent-dob" id="MotherDateOfBirth" />
+                </div>
+
+                <div class="col-md-1">
+                    <label class="form-label small">Age</label>
+                    <input asp-for="MotherAge" class="form-control form-control-sm input-age" id="MotherAge" readonly />
+                </div>
+            </div>
+
+            <div class="row gx-2 mt-2">
+                <div class="col-md-6">
                     <label class="form-label small">Occupation</label>
                     <select asp-for="MotherOccupation" class="form-select form-select-sm parent-occupation-select" id="MotherOccupationSelect">
                         <option value="">Select...</option>
-                        <option>Unemployed</option>
-                        <option>Student</option>
-                        <option>Housewife / Housekeeper</option>
-                        <option>Farmer</option>
-                        <option>Fisherman</option>
-                        <option>Driver</option>
-                        <option>Laborer</option>
-                        <option>Vendor</option>
-                        <option>Teacher</option>
-                        <option>Nurse</option>
-                        <option>Office Worker / Clerk</option>
-                        <option>Construction Worker</option>
-                        <option>Security Guard</option>
-                        <option>Business Owner</option>
-                        <option>Factory Worker</option>
-                        <option>Carpenter</option>
-                        <option>Electrician</option>
-                        <option>Plumber</option>
-                        <option>Others</option>
+                        <option>Unemployed</option><option>Student</option><option>Housewife / Housekeeper</option><option>Farmer</option><option>Fisherman</option><option>Driver</option><option>Laborer</option><option>Vendor</option><option>Teacher</option><option>Nurse</option><option>Office Worker / Clerk</option><option>Construction Worker</option><option>Security Guard</option><option>Business Owner</option><option>Factory Worker</option><option>Carpenter</option><option>Electrician</option><option>Plumber</option><option>Others</option>
                     </select>
-                    <input asp-for="MotherOccupationOther" class="form-control form-control-sm mt-2 parent-occupation-other" id="MotherOccupationOther" placeholder="Please specify occupation" style="display:none;" />
+                    <input asp-for="MotherOccupationOther" id="MotherOccupationOther" class="form-control form-control-sm mt-2 parent-occupation-other" placeholder="Please specify occupation" style="display:none;" />
                 </div>
 
-                <!-- Education dropdown + specify -->
-                <div class="col-md-6 mt-1">
+                <div class="col-md-6">
                     <label class="form-label small">Educational Attainment</label>
-                    <select asp-for="MotherEducation" class="form-select form-select-sm parent-education-select" id="MotherEducationSelect">
+                    <select asp-for="MotherEducation" class="form-select form-select-sm" id="MotherEducationSelect">
                         <option value="">Select...</option>
-                        <option>Elementary Graduate</option>
-                        <option>High School Graduate</option>
-                        <option>College Graduate</option>
-                        <option>Vocational / Technical Graduate</option>
-                        <option>Others</option>
+                        <option>Elementary Graduate</option><option>High School Graduate</option><option>College Graduate</option><option>Vocational / Technical Graduate</option><option>Others</option>
                     </select>
-                    <input asp-for="MotherEducationOther" class="form-control form-control-sm mt-2 parent-education-other" id="MotherEducationOther" placeholder="Please specify educational attainment" style="display:none;" />
+                    <input asp-for="MotherEducationOther" id="MotherEducationOther" class="form-control form-control-sm mt-2 parent-education-other" placeholder="Please specify" style="display:none;" />
                 </div>
-
-                <!-- hidden sex -->
-                <input type="hidden" asp-for="MotherSex" value="Female" />
             </div>
+
+            <input type="hidden" asp-for="MotherSex" value="Female" />
         </div>
 
-        <!-- -------------------- Children -------------------- -->
+        <!-- Children -->
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h5 class="mb-0">Children's Information</h5>
             <button type="button" id="addChildBtn" class="btn btn-sm btn-primary">Add Child</button>
@@ -175,159 +204,140 @@
         <div id="childrenContainer" class="mb-3">
             @for (int i = 0; i < (Model.Children?.Count ?? 0); i++)
             {
-                var childSex = Model.Children[i].Sex ?? "";
-                var selFemale = childSex == "Female" ? "selected" : null;
-                var selMale = childSex == "Male" ? "selected" : null;
+                var child = Model.Children[i];
+                var childOcc = child?.Occupation ?? "";
+                var occOtherVal = child?.OccupationOther ?? "";
+                var childEdu = child?.Education ?? "";
+                var eduOtherVal = child?.EducationOther ?? "";
+                var childSex = child?.Sex ?? "";
 
-                var childOcc = Model.Children[i].Occupation ?? "";
-                var occOthers = childOcc == "Others" ? "selected" : null;
-                var occOtherVal = Model.Children[i].OccupationOther ?? "";
+                <div class="card mb-3 p-3 child-row position-relative" data-index="@i">
+                    <!-- Remove button top-right (now not in flow) -->
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-child" aria-label="Remove child" title="Remove child" style="position:absolute; top:12px; right:12px; z-index:2;">
+                        Remove
+                    </button>
 
-                var childEdu = Model.Children[i].Education ?? "";
-                var eduOthers = childEdu == "Others" ? "selected" : null;
-                var eduOtherVal = Model.Children[i].EducationOther ?? "";
-
-                <div class="child-row border rounded p-3 mb-2" data-index="@i">
-                    <div class="row gx-2 gy-2">
+                    <div class="row gx-2 align-items-end">
                         <div class="col-md-3">
                             <label class="form-label small">First Name</label>
-                            <input name="Children[@i].FirstName" value="@Model.Children[i].FirstName" class="form-control form-control-sm" />
+                            <input name="Children[@i].FirstName" value="@child?.FirstName" class="form-control form-control-sm" />
                         </div>
-                        <div class="col-md-3">
+
+                        <div class="col-md-2">
                             <label class="form-label small">Middle Name</label>
-                            <input name="Children[@i].MiddleName" value="@Model.Children[i].MiddleName" class="form-control form-control-sm" />
+                            <input name="Children[@i].MiddleName" value="@child?.MiddleName" class="form-control form-control-sm" />
                         </div>
-                        <div class="col-md-3">
+
+                        <div class="col-md-2">
                             <label class="form-label small">Last Name</label>
-                            <input name="Children[@i].LastName" value="@Model.Children[i].LastName" class="form-control form-control-sm" />
+                            <input name="Children[@i].LastName" value="@child?.LastName" class="form-control form-control-sm" />
                         </div>
 
                         <div class="col-md-2">
                             <label class="form-label small">Extension</label>
-                            <input name="Children[@i].Extension" value="@Model.Children[i].Extension" class="form-control form-control-sm" />
+                            <input name="Children[@i].Extension" value="@child?.Extension" class="form-control form-control-sm" />
                         </div>
 
-                        <div class="col-md-1 child-remove-col">
-                            <button type="button" class="btn btn-outline-danger btn-sm remove-child" style="margin-top:0.25rem;">Remove</button>
+                        <div class="col-md-3">
+                            <label class="form-label small">Date of Birth</label>
+                            <input name="Children[@i].DateOfBirth" type="date" value="@(child?.DateOfBirth?.ToString("yyyy-MM-dd") ?? "")" class="form-control form-control-sm child-dob" />
+                        </div>
+                    </div>
+
+                    <div class="row gx-2 mt-2 align-items-end">
+                        <div class="col-md-1">
+                            <label class="form-label small">Age</label>
+                            <input name="Children[@i].Age" value="@(child?.Age?.ToString() ?? "")" class="form-control form-control-sm child-age" readonly />
                         </div>
 
-                        <div class="col-md-5 mt-1">
+                        <div class="col-md-4">
                             <label class="form-label small">Occupation</label>
                             <select name="Children[@i].Occupation" class="form-select form-select-sm child-occupation-select">
-                                <option value="">Select...</option>
-                                <option>Unemployed</option>
-                                <option>Student</option>
-                                <option>Housewife / Housekeeper</option>
-                                <option>Farmer</option>
-                                <option>Fisherman</option>
-                                <option>Driver</option>
-                                <option>Laborer</option>
-                                <option>Vendor</option>
-                                <option>Teacher</option>
-                                <option>Nurse</option>
-                                <option>Office Worker / Clerk</option>
-                                <option>Construction Worker</option>
-                                <option>Security Guard</option>
-                                <option>Business Owner</option>
-                                <option>Factory Worker</option>
-                                <option>Carpenter</option>
-                                <option>Electrician</option>
-                                <option>Plumber</option>
-                                <option>Others</option>
+                                @Html.Raw("<option value=\"\">Select...</option>")
+                                @Html.Raw("<option value=\"Unemployed\"" + (childOcc == "Unemployed" ? " selected" : "") + ">Unemployed</option>")
+                                @Html.Raw("<option value=\"Student\"" + (childOcc == "Student" ? " selected" : "") + ">Student</option>")
+                                @Html.Raw("<option value=\"Farmer\"" + (childOcc == "Farmer" ? " selected" : "") + ">Farmer</option>")
+                                @Html.Raw("<option value=\"Housewife / Housekeeper\"" + (childOcc == "Housewife / Housekeeper" ? " selected" : "") + ">Housewife / Housekeeper</option>")
+                                @Html.Raw("<option value=\"Others\"" + (childOcc == "Others" ? " selected" : "") + ">Others</option>")
                             </select>
 
-                            <input name="Children[@i].OccupationOther"
-                                   value="@occOtherVal"
-                                   class="form-control form-control-sm mt-2 child-occupation-other"
-                                   placeholder="Please specify occupation"
-                                   style="display:@(occOthers != null ? "block" : "none");" />
+                            <input name="Children[@i].OccupationOther" value="@(occOtherVal ?? "")" class="form-control form-control-sm mt-2 child-occupation-other" placeholder="Please specify" style="display:@(childOcc == "Others" ? "block" : "none");" />
                         </div>
 
-                        <div class="col-md-4 mt-1">
-                            <label class="form-label small">Educational Attainment</label>
-                            <select name="Children[@i].Education" class="form-select form-select-sm child-education-select">
-                                <option value="">Select...</option>
-                                <option>Elementary Graduate</option>
-                                <option>High School Graduate</option>
-                                <option>College Graduate</option>
-                                <option>Vocational / Technical Graduate</option>
-                                <option>Others</option>
-                            </select>
-
-                            <input name="Children[@i].EducationOther"
-                                   value="@eduOtherVal"
-                                   class="form-control form-control-sm mt-2 child-education-other"
-                                   placeholder="Please specify educational attainment"
-                                   style="display:@(eduOthers != null ? "block" : "none");" />
-                        </div>
-
-                        <div class="col-md-3 mt-1">
+                        <div class="col-md-3">
                             <label class="form-label small">Sex</label>
                             <select name="Children[@i].Sex" class="form-select form-select-sm">
-                                <option value="">Select...</option>
-                                <option value="Female" selected="@(selFemale)">Female</option>
-                                <option value="Male" selected="@(selMale)">Male</option>
+                                @Html.Raw("<option value=\"\">Select...</option>")
+                                @Html.Raw("<option value=\"Female\"" + (childSex == "Female" ? " selected" : "") + ">Female</option>")
+                                @Html.Raw("<option value=\"Male\"" + (childSex == "Male" ? " selected" : "") + ">Male</option>")
                             </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label small">Educational Attainment</label>
+                            <select name="Children[@i].Education" class="form-select form-select-sm child-education-select">
+                                @Html.Raw("<option value=\"\">Select...</option>")
+                                @Html.Raw("<option value=\"Elementary Graduate\"" + (childEdu == "Elementary Graduate" ? " selected" : "") + ">Elementary Graduate</option>")
+                                @Html.Raw("<option value=\"High School Graduate\"" + (childEdu == "High School Graduate" ? " selected" : "") + ">High School Graduate</option>")
+                                @Html.Raw("<option value=\"College Graduate\"" + (childEdu == "College Graduate" ? " selected" : "") + ">College Graduate</option>")
+                                @Html.Raw("<option value=\"Others\"" + (childEdu == "Others" ? " selected" : "") + ">Others</option>")
+                            </select>
+                            <input name="Children[@i].EducationOther" value="@(eduOtherVal ?? "")" class="form-control form-control-sm mt-2 child-education-other" placeholder="Please specify" style="display:@(childEdu == "Others" ? "block" : "none");" />
                         </div>
                     </div>
                 </div>
             }
         </div>
 
-        <!-- Health Information (updated: Others -> specify) -->
-        <hr />
 
+        <!-- Health -->
         <h5 class="mt-3">Health Information</h5>
         <div class="card p-3 mb-3">
-            <div class="row">
-                <div class="col-md-3 form-check">
+            <div class="d-flex flex-wrap align-items-center mb-2">
+                <div class="form-check me-4">
                     <input class="form-check-input" asp-for="MotherPregnant" />
                     <label class="form-check-label">Mother Pregnant</label>
                 </div>
-                <div class="col-md-3 form-check">
+                <div class="form-check me-4">
                     <input class="form-check-input" asp-for="FamilyPlanning" />
                     <label class="form-check-label">Family Planning</label>
                 </div>
-                <div class="col-md-3 form-check">
+                <div class="form-check me-4">
                     <input class="form-check-input" asp-for="ExclusiveBreastfeeding" />
                     <label class="form-check-label">Exclusive Breastfeeding</label>
                 </div>
-                <div class="col-md-3 form-check">
+                <div class="form-check me-4">
                     <input class="form-check-input" asp-for="MixedFeeding" />
                     <label class="form-check-label">Mixed Feeding</label>
                 </div>
-
-                <div class="col-md-3 form-check mt-2">
+                <div class="form-check me-4">
                     <input class="form-check-input" asp-for="BottleFed" />
                     <label class="form-check-label">Bottle Fed</label>
                 </div>
 
-                <!-- Others feeding checkbox + specify textbox -->
-                <div class="col-md-3 form-check mt-2">
-                    <input class="form-check-input" asp-for="OthersFeeding" id="OthersFeedingCheckbox" />
-                    <label class="form-check-label">Others</label>
-                    <input asp-for="OthersFeedingSpecify" id="OthersFeedingSpecify" class="form-control form-control-sm mt-2" placeholder="Please specify" style="display:none;" />
+                <div class="d-flex align-items-center">
+                    <div class="form-check me-2">
+                        <input class="form-check-input" asp-for="OthersFeeding" id="OthersFeedingCheckbox" />
+                        <label class="form-check-label" for="OthersFeedingCheckbox">Others</label>
+                    </div>
+                    <input asp-for="OthersFeedingSpecify" id="OthersFeedingSpecify" class="form-control form-control-sm" placeholder="Please specify" style="width:250px;" />
                 </div>
             </div>
-        </div>
 
-        <!-- Additional nutrition / iodized salt -->
-        <div class="card p-3 mb-3">
-            <div class="row">
-                <div class="col-md-3 form-check">
+            <div class="d-flex flex-wrap align-items-center mt-2">
+                <div class="form-check me-4">
                     <input class="form-check-input" asp-for="UsingIodizedSalt" />
                     <label class="form-check-label">Using Iodized Salt</label>
                 </div>
-                <div class="col-md-3 form-check">
+
+                <div class="form-check me-4">
                     <input class="form-check-input" asp-for="UsingIFR" />
                     <label class="form-check-label">Using Infant Replacement Formula</label>
                 </div>
             </div>
         </div>
 
-        <hr />
-
-        <h5 class="mt-3">Sanitation Information</h5>
+        <!-- Sanitation -->
         <div class="card p-3 mb-3">
             <div class="row g-3">
                 <div class="col-md-4">
@@ -339,7 +349,6 @@
                         <option>Others</option>
                         <option>None</option>
                     </select>
-
                     <input asp-for="ToiletTypeOther" id="ToiletTypeOther" class="form-control form-control-sm mt-2" placeholder="Please specify toilet type" style="display:none;" />
                 </div>
 
@@ -352,7 +361,6 @@
                         <option>Fishpond/Fishing</option>
                         <option>Others</option>
                     </select>
-
                     <input asp-for="FoodProductionActivityOther" id="FoodProductionOther" class="form-control form-control-sm mt-2" placeholder="Please specify activity" style="display:none;" />
                 </div>
 
@@ -365,7 +373,6 @@
                         <option>Spring(Natural Sping Water)</option>
                         <option>Others</option>
                     </select>
-
                     <input asp-for="WaterSourceOther" id="WaterSourceOther" class="form-control form-control-sm mt-2" placeholder="Please specify water source" style="display:none;" />
                 </div>
             </div>
@@ -375,164 +382,285 @@
             <button type="submit" class="btn btn-primary">Save Household</button>
             <a asp-action="Households" class="btn btn-outline-secondary">Cancel</a>
         </div>
-
     </form>
 </div>
 
 @section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         (function () {
-            const form = document.getElementById('createHouseholdForm');
-            const container = document.getElementById('childrenContainer');
-            const addBtn = document.getElementById('addChildBtn');
+            // --- helpers ---
+            function computeAgeFromDate(d) {
+                if (!d) return null;
+                const b = new Date(d);
+                if (isNaN(b)) return null;
+                const now = new Date();
+                let age = now.getFullYear() - b.getFullYear();
+                const m = now.getMonth() - b.getMonth();
+                if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
+                return age >= 0 ? age : 0;
+            }
 
-            // initial child index
-            let index = container ? container.querySelectorAll('.child-row').length : 0;
+            function updateAgeForPair(dateInput, ageInput) {
+                if (!dateInput || !ageInput) return;
+                const age = computeAgeFromDate(dateInput.value);
+                ageInput.value = (age === null) ? '' : age;
+            }
+
+            // --- parent DOB -> age wiring ---
+            const fatherDob = document.getElementById('FatherDateOfBirth');
+            const fatherAge = document.getElementById('FatherAge');
+            if (fatherDob && fatherAge) {
+                fatherDob.addEventListener('change', () => updateAgeForPair(fatherDob, fatherAge));
+                updateAgeForPair(fatherDob, fatherAge);
+            }
+
+            const motherDob = document.getElementById('MotherDateOfBirth');
+            const motherAge = document.getElementById('MotherAge');
+            if (motherDob && motherAge) {
+                motherDob.addEventListener('change', () => updateAgeForPair(motherDob, motherAge));
+                updateAgeForPair(motherDob, motherAge);
+            }
+
+            // --- child DOB -> age + toggles via delegation ---
+            const childrenContainer = document.getElementById('childrenContainer');
+
+            function wireChildRowInitial(row) {
+                // initialize age for pre-rendered rows
+                const dob = row.querySelector('.child-dob');
+                const age = row.querySelector('.child-age');
+                if (dob && age) updateAgeForPair(dob, age);
+
+                // ensure occupation/education other visibility for server-rendered rows
+                const occSel = row.querySelector('.child-occupation-select');
+                const occOther = row.querySelector('.child-occupation-other');
+                if (occSel && occOther) occOther.style.display = (occSel.value === 'Others') ? 'block' : 'none';
+
+                const eduSel = row.querySelector('.child-education-select');
+                const eduOther = row.querySelector('.child-education-other');
+                if (eduSel && eduOther) eduOther.style.display = (eduSel.value === 'Others') ? 'block' : 'none';
+            }
+
+            if (childrenContainer) {
+                // initialize existing children
+                childrenContainer.querySelectorAll('.child-row').forEach(wireChildRowInitial);
+
+                childrenContainer.addEventListener('change', function (e) {
+                    const t = e.target;
+                    if (!t) return;
+
+                    if (t.classList && t.classList.contains('child-dob')) {
+                        const row = t.closest('.child-row');
+                        const ageInput = row ? row.querySelector('.child-age') : null;
+                        if (ageInput) updateAgeForPair(t, ageInput);
+                    }
+
+                    // occupation "Others" toggle
+                    if (t.matches('.child-occupation-select')) {
+                        const row = t.closest('.child-row');
+                        const other = row ? row.querySelector('.child-occupation-other') : null;
+                        if (other) {
+                            other.style.display = (t.value === 'Others') ? 'block' : 'none';
+                            if (t.value !== 'Others') other.value = '';
+                        }
+                    }
+
+                    // education "Others" toggle
+                    if (t.matches('.child-education-select')) {
+                        const row = t.closest('.child-row');
+                        const other = row ? row.querySelector('.child-education-other') : null;
+                        if (other) {
+                            other.style.display = (t.value === 'Others') ? 'block' : 'none';
+                            if (t.value !== 'Others') other.value = '';
+                        }
+                    }
+                });
+            }
+
+            // --- dynamic Add / Remove children ---
+            const addBtn = document.getElementById('addChildBtn');
+            // initialize childIndex from existing rendered rows (keeps names sequential)
+            let childIndex = childrenContainer ? childrenContainer.querySelectorAll('.child-row').length : 0;
 
             function createChildRow(idx) {
+                // create a card that matches the server-rendered child-row structure
                 const div = document.createElement('div');
-                div.className = 'child-row border rounded p-3 mb-2';
+                div.className = 'card mb-3 p-3 child-row position-relative';
                 div.setAttribute('data-index', idx);
 
                 div.innerHTML = `
-                    <div class="row gx-2 gy-2">
-                        <div class="col-md-3"><label class="form-label small">First Name</label><input name="Children[${idx}].FirstName" class="form-control form-control-sm" /></div>
-                        <div class="col-md-3"><label class="form-label small">Middle Name</label><input name="Children[${idx}].MiddleName" class="form-control form-control-sm" /></div>
-                        <div class="col-md-3"><label class="form-label small">Last Name</label><input name="Children[${idx}].LastName" class="form-control form-control-sm" /></div>
-                        <div class="col-md-2"><label class="form-label small">Ext</label><input name="Children[${idx}].Extension" class="form-control form-control-sm" /></div>
-                        <div class="col-md-1 child-remove-col"><button type="button" class="btn btn-outline-danger btn-sm remove-child" style="margin-top:0.25rem;">Remove</button></div>
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-child" aria-label="Remove child" title="Remove child" style="position:absolute; top:12px; right:12px; z-index:2;">Remove</button>
 
-                        <div class="col-md-5 mt-1">
+                    <div class="row gx-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label small">First Name</label>
+                            <input name="Children[${idx}].FirstName" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small">Middle Name</label>
+                            <input name="Children[${idx}].MiddleName" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small">Last Name</label>
+                            <input name="Children[${idx}].LastName" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small">Extension</label>
+                            <input name="Children[${idx}].Extension" class="form-control form-control-sm" />
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label small">Date of Birth</label>
+                            <input name="Children[${idx}].DateOfBirth" type="date" class="form-control form-control-sm child-dob" />
+                        </div>
+                    </div>
+
+                    <div class="row gx-2 mt-2 align-items-end">
+                        <div class="col-md-1">
+                            <label class="form-label small">Age</label>
+                            <input name="Children[${idx}].Age" class="form-control form-control-sm child-age" readonly />
+                        </div>
+
+                        <div class="col-md-4">
                             <label class="form-label small">Occupation</label>
                             <select name="Children[${idx}].Occupation" class="form-select form-select-sm child-occupation-select">
                                 <option value="">Select...</option>
-                                <option>Unemployed</option><option>Student</option><option>Housewife / Housekeeper</option><option>Farmer</option><option>Fisherman</option><option>Driver</option><option>Laborer</option><option>Vendor</option><option>Teacher</option><option>Nurse</option><option>Office Worker / Clerk</option><option>Construction Worker</option><option>Security Guard</option><option>Business Owner</option><option>Factory Worker</option><option>Carpenter</option><option>Electrician</option><option>Plumber</option><option>Others</option>
+                                <option value="Unemployed">Unemployed</option>
+                                <option value="Student">Student</option>
+                                <option value="Farmer">Farmer</option>
+                                <option value="Housewife / Housekeeper">Housewife / Housekeeper</option>
+                                <option value="Others">Others</option>
                             </select>
-                            <input name="Children[${idx}].OccupationOther" class="form-control form-control-sm mt-2 child-occupation-other" placeholder="Please specify occupation" style="display:none;" />
+                            <input name="Children[${idx}].OccupationOther" class="form-control form-control-sm mt-2 child-occupation-other" placeholder="Please specify" style="display:none;" />
                         </div>
 
-                        <div class="col-md-4 mt-1">
+                        <div class="col-md-3">
+                            <label class="form-label small">Sex</label>
+                            <select name="Children[${idx}].Sex" class="form-select form-select-sm">
+                                <option value="">Select...</option>
+                                <option value="Female">Female</option>
+                                <option value="Male">Male</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
                             <label class="form-label small">Educational Attainment</label>
                             <select name="Children[${idx}].Education" class="form-select form-select-sm child-education-select">
                                 <option value="">Select...</option>
-                                <option>Elementary Graduate</option><option>High School Graduate</option><option>College Graduate</option><option>Vocational / Technical Graduate</option><option>Others</option>
+                                <option value="Elementary Graduate">Elementary Graduate</option>
+                                <option value="High School Graduate">High School Graduate</option>
+                                <option value="College Graduate">College Graduate</option>
+                                <option value="Others">Others</option>
                             </select>
-                            <input name="Children[${idx}].EducationOther" class="form-control form-control-sm mt-2 child-education-other" placeholder="Please specify educational attainment" style="display:none;" />
+                            <input name="Children[${idx}].EducationOther" class="form-control form-control-sm mt-2 child-education-other" placeholder="Please specify" style="display:none;" />
                         </div>
-
-                        <div class="col-md-3 mt-1"><label class="form-label small">Sex</label><select name="Children[${idx}].Sex" class="form-select form-select-sm"><option value="">Select...</option><option>Female</option><option>Male</option></select></div>
-                    </div>`;
-
+                    </div>
+                `;
                 return div;
             }
 
-            if (addBtn && container) {
+            if (addBtn && childrenContainer) {
                 addBtn.addEventListener('click', function () {
-                    const row = createChildRow(index++);
-                    container.appendChild(row);
+                    const row = createChildRow(childIndex++);
+                    childrenContainer.appendChild(row);
+                    // focus first input
                     const first = row.querySelector('input');
                     if (first) first.focus();
                 });
-            }
 
-            // Delegate remove and other select toggles for dynamic and server-rendered rows
-            if (container) {
-                container.addEventListener('click', function (e) {
-                    if (e.target && e.target.classList.contains('remove-child')) {
-                        const row = e.target.closest('.child-row');
-                        if (row) row.remove();
-                    }
-                });
-
-                container.addEventListener('change', function (e) {
-                    const sel = e.target;
-                    if (!sel) return;
-
-                    // child occupation other toggle
-                    if (sel.classList.contains('child-occupation-select')) {
-                        const row = sel.closest('.child-row');
-                        const other = row.querySelector('.child-occupation-other');
-                        if (!other) return;
-                        if (sel.value === 'Others') { other.style.display = 'block'; other.focus(); }
-                        else { other.value = ''; other.style.display = 'none'; }
-                    }
-
-                    // child education other toggle
-                    if (sel.classList.contains('child-education-select')) {
-                        const row = sel.closest('.child-row');
-                        const other = row.querySelector('.child-education-other');
-                        if (!other) return;
-                        if (sel.value === 'Others') { other.style.display = 'block'; other.focus(); }
-                        else { other.value = ''; other.style.display = 'none'; }
-                    }
+                // remove handler (delegation)
+                childrenContainer.addEventListener('click', function (e) {
+                    const btn = e.target.closest('.remove-child');
+                    if (!btn) return;
+                    const row = btn.closest('.child-row');
+                    if (!row) return;
+                    // confirm removal optionally (you can disable if not needed)
+                    Swal.fire({
+                        title: 'Remove child?',
+                        text: 'This will remove the child entry from the form.',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, remove',
+                        cancelButtonText: 'Cancel',
+                        confirmButtonColor: '#d33'
+                    }).then(result => {
+                        if (!result.isConfirmed) return;
+                        row.remove();
+                        reindexChildren();
+                    });
                 });
             }
 
-            // Parent-level selects show/hide other input
+            // reindex children inputs before submit
+            function reindexChildren() {
+                const rows = Array.from(document.querySelectorAll('#childrenContainer .child-row'));
+                rows.forEach((row, idx) => {
+                    row.setAttribute('data-index', idx);
+                    row.querySelectorAll('input[name], select[name], textarea[name]').forEach(el => {
+                        const name = el.getAttribute('name');
+                        if (!name) return;
+                        const newName = name.replace(/^Children\[\d+\]/, `Children[${idx}]`);
+                        el.setAttribute('name', newName);
+                    });
+                });
+                childIndex = rows.length;
+            }
+
+            // ensure reindex on submit
+            const form = document.getElementById('createHouseholdForm');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    reindexChildren();
+                });
+            }
+
+            // Parent occupation/education toggles
             function wireParentSelect(idSelect, idOther) {
                 const sel = document.getElementById(idSelect);
                 const other = document.getElementById(idOther);
                 if (!sel || !other) return;
                 sel.addEventListener('change', function () {
-                    if (sel.value === 'Others') { other.style.display = 'block'; other.focus(); }
-                    else { other.value = ''; other.style.display = 'none'; }
+                    other.style.display = (sel.value === 'Others') ? 'block' : 'none';
+                    if (sel.value !== 'Others') other.value = '';
                 });
-                if (sel.value === 'Others') other.style.display = 'block';
+                other.style.display = (sel.value === 'Others') ? 'block' : 'none';
             }
-
             wireParentSelect('FatherOccupationSelect', 'FatherOccupationOther');
             wireParentSelect('FatherEducationSelect', 'FatherEducationOther');
             wireParentSelect('MotherOccupationSelect', 'MotherOccupationOther');
             wireParentSelect('MotherEducationSelect', 'MotherEducationOther');
 
-            // Sanitation selects
+            // Toilet / Water / Food selects "Other" toggles
             function wireSelect(idSelect, idOther) {
-                const sel = document.getElementById(idSelect);
-                const other = document.getElementById(idOther);
-                if (!sel || !other) return;
-                sel.addEventListener('change', function () {
-                    if (sel.value === 'Others') { other.style.display = 'block'; other.focus(); }
-                    else { other.value = ''; other.style.display = 'none'; }
+                const s = document.getElementById(idSelect);
+                const o = document.getElementById(idOther);
+                if (!s || !o) return;
+                s.addEventListener('change', function () {
+                    o.style.display = (s.value === 'Others') ? 'block' : 'none';
+                    if (s.value !== 'Others') o.value = '';
                 });
-                if (sel.value === 'Others') other.style.display = 'block';
+                o.style.display = (s.value === 'Others') ? 'block' : 'none';
             }
-
             wireSelect('ToiletTypeSelect', 'ToiletTypeOther');
             wireSelect('FoodProductionSelect', 'FoodProductionOther');
             wireSelect('WaterSourceSelect', 'WaterSourceOther');
 
-            // Health others feeding
-            const othersFeedingCb = document.getElementById('OthersFeedingCheckbox');
-            const othersFeedingInput = document.getElementById('OthersFeedingSpecify');
-            if (othersFeedingCb && othersFeedingInput) {
+            // Others feeding
+            const othersCb = document.getElementById('OthersFeedingCheckbox');
+            const othersInput = document.getElementById('OthersFeedingSpecify');
+            if (othersCb && othersInput) {
                 const toggle = () => {
-                    if (othersFeedingCb.checked) { othersFeedingInput.style.display = 'block'; othersFeedingInput.focus(); }
-                    else { othersFeedingInput.style.display = 'none'; othersFeedingInput.value = ''; }
+                    if (othersCb.checked) othersInput.style.display = 'inline-block';
+                    else othersInput.value = '';
                 };
-                othersFeedingCb.addEventListener('change', toggle);
+                othersCb.addEventListener('change', toggle);
                 toggle();
             }
 
-            // Reindex child inputs before submit to ensure contiguous Children[0], Children[1], ...
-            if (form) {
-                form.addEventListener('submit', function () {
-                    const rows = Array.from(document.querySelectorAll('.child-row'));
-                    rows.forEach((row, newIndex) => {
-                        const inputs = row.querySelectorAll('input, select, textarea');
-                        inputs.forEach(inp => {
-                            const name = inp.getAttribute('name');
-                            if (!name) return;
-                            const m = name.match(/^Children\[\d+\]\.(.+)$/);
-                            if (m) {
-                                const prop = m[1];
-                                inp.setAttribute('name', `Children[${newIndex}].${prop}`);
-                            }
-                        });
-                    });
-
-                    // let the form submit normally after renaming inputs
-                });
-            }
+            // initialize: runs on page load for any dynamic elements present
+            // (we already ran the necessary initializers above)
         })();
     </script>
 }
+

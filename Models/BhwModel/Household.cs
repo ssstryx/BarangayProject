@@ -1,9 +1,11 @@
 ﻿// Models/Household.cs
+using BarangayProject.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-
-namespace BarangayProject.Models
+using System.ComponentModel.DataAnnotations.Schema;
+using BarangayProject.Models.AdminModel;
+namespace BarangayProject.Models.BhwModel
 {
     public class Household
     {
@@ -20,6 +22,12 @@ namespace BarangayProject.Models
         public bool IsArchived { get; set; } = false;
         public DateTime? ArchivedAt { get; set; }
         public string ArchivedBy { get; set; } = "";
+
+        // NEW: Sitio FK - optional (household may or may not have a sitio assigned)
+        public int? SitioId { get; set; }
+
+        [ForeignKey(nameof(SitioId))]
+        public Sitio? Sitio { get; set; }
 
         // navigation
         public ICollection<Resident> Residents { get; set; } = new List<Resident>();

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Identity;
 
-namespace BarangayProject.Models
+namespace BarangayProject.Models.AdminModel
 {
     public class ApplicationUser : IdentityUser, IAuditable
     {

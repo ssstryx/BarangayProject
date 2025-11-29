@@ -1,7 +1,7 @@
 ﻿using BarangayProject.Models;
 using System;
 using System.Collections.Generic;
-
+using BarangayProject.Models.AdminModel;
 public class ReportsViewModel
 {
     public int TotalUsers { get; set; }
@@ -14,5 +14,5 @@ public class ReportsViewModel
     public List<(string Label, int Count)> UsersByMonth { get; set; } = new();
     public List<(string Label, int Count)> SitiosByAssignment { get; set; } = new();
 
-    public List<DashboardActivityVm> RecentActivities { get; set; } = new();
+    public List<DashboardViewModel> RecentActivities { get; set; } = new();
 }

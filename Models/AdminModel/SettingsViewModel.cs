@@ -1,4 +1,4 @@
-﻿namespace BarangayProject.Models;
+﻿namespace BarangayProject.Models.AdminModel;
 
 public class SettingsViewModel
 {

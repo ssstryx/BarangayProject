@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BarangayProject.Models
+namespace BarangayProject.Models.AdminModel
 {
     // Simple POCO representing the 1:1 profile for ApplicationUser
     public class UserProfile

@@ -1,4 +1,5 @@
-﻿@model BarangayProject.Models.Sitio
+﻿@using BarangayProject.Models.AdminModel
+@model Sitio
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
@@ -18,14 +19,6 @@
                     <label asp-for="Name" class="form-label"></label>
                     <input asp-for="Name" class="form-control" />
                     <span asp-validation-for="Name" class="text-danger small"></span>
-                </div>
-
-                <div class="mb-3">
-                    <label asp-for="AssignedBhwId" class="form-label">Assigned BHW</label>
-                    <select asp-for="AssignedBhwId" class="form-select" asp-items="(SelectList)ViewBag.BHWs">
-                        <option value="">-- Unassigned --</option>
-                    </select>
-                    <span asp-validation-for="AssignedBhwId" class="text-danger small"></span>
                 </div>
             </div>
 

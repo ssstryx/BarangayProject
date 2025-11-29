@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace BarangayProject.Models
+namespace BarangayProject.Models.AdminModel
 {
     public class AuditLog
     {

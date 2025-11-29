@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using BarangayProject.Data;
 using BarangayProject.Models;
 using BarangayProject.Services;
+using BarangayProject.Models.AdminModel;
 
 namespace BarangayProject.Controllers
 {

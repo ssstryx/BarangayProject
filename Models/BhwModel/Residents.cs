@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace BarangayProject.Models
+namespace BarangayProject.Models.BhwModel
 {
     public class Resident
     {
@@ -37,5 +37,11 @@ namespace BarangayProject.Models
         public string Education { get; set; } = "";
 
         public string? EducationOther { get; set; }
+
+        public DateTime? DateOfBirth { get; set; }
+        public int? Age { get; set; }
+
+        // NEW: track when this resident record was created (UTC)
+        public DateTime? CreatedAt { get; set; }
     }
 }

@@ -4,7 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using BarangayProject.Models;
+using BarangayProject.Models.AdminModel;
+using BarangayProject.Models.BhwModel;
 
 namespace BarangayProject.Data
 {
@@ -19,6 +20,7 @@ namespace BarangayProject.Data
         public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<Sitio> Sitios { get; set; } = null!;
+        public DbSet<SitioBhw> SitioBhws { get; set; } = null!; // NEW: join table for many-to-many Sitio <-> BHW
         public DbSet<SystemConfiguration> SystemConfigurations { get; set; }
         public DbSet<Household> Households { get; set; }
         public DbSet<Resident> Residents { get; set; }
@@ -49,14 +51,32 @@ namespace BarangayProject.Data
                 // This ensures if the user account gets deleted the audit row remains and ApplicationUserId becomes NULL.
                 entity.Property<string>("ApplicationUserId").HasMaxLength(450).IsRequired(false);
 
-                entity.HasOne<ApplicationUser>()              // NO relation to Sitio or other domain entities here
+                entity.HasOne<ApplicationUser>()              // NO relation required on ApplicationUser
                       .WithMany(u => u.AuditLogs)            // only if ApplicationUser has ICollection<AuditLog> AuditLogs
                       .HasForeignKey("ApplicationUserId")
                       .OnDelete(DeleteBehavior.SetNull);
             });
 
+            // Household mapping: optional Sitio relationship
+            builder.Entity<Household>(entity =>
+            {
+                entity.ToTable("Households");
+                entity.HasKey(h => h.Id);
 
+                entity.Property(h => h.FamilyHead).HasMaxLength(191).IsRequired();
+                entity.Property(h => h.Details).HasColumnType("text").IsRequired(false);
+                entity.Property(h => h.IsArchived).IsRequired();
+                entity.Property(h => h.ArchivedAt).HasColumnType("datetime(6)").IsRequired(false);
+                entity.Property(h => h.ArchivedBy).HasMaxLength(191).IsRequired(false);
+                entity.Property(h => h.CreatedAt).HasColumnType("datetime(6)").IsRequired();
+                entity.Property(h => h.UpdatedAt).HasColumnType("datetime(6)").IsRequired(false);
 
+                // Sitio FK (optional)
+                entity.HasOne(h => h.Sitio)
+                      .WithMany(s => s.Households)
+                      .HasForeignKey(h => h.SitioId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
 
             // Sitio mapping
             builder.Entity<Sitio>(entity =>
@@ -64,15 +84,37 @@ namespace BarangayProject.Data
                 entity.ToTable("Sitios");
                 entity.HasKey(s => s.Id);
                 entity.Property(s => s.Name).HasMaxLength(150).IsRequired();
-                entity.Property(s => s.Location).HasMaxLength(250).IsRequired(false);
-                entity.Property(s => s.AssignedBhwId).HasMaxLength(450).IsRequired(false);
 
-                entity.HasOne(s => s.AssignedBhw)
-                      .WithMany(u => u.AssignedSitios) // optional navigation on ApplicationUser
-                      .HasForeignKey(s => s.AssignedBhwId)
-                      .OnDelete(DeleteBehavior.SetNull);
+                // NOTE: we removed the single AssignedBhwId column mapping here in favor of a join table SitioBhws.
+                // If you decide to keep AssignedBhwId for backward compatibility, re-add property mapping below and handle it accordingly.
             });
 
+            // NEW: SitioBhw join table mapping (many-to-many Sitio <-> BHW (ApplicationUser))
+            builder.Entity<SitioBhw>(entity =>
+            {
+                entity.ToTable("SitioBhws");
+
+                // Composite PK: SitioId + BhwId
+                entity.HasKey(sb => new { sb.SitioId, sb.BhwId });
+
+                entity.Property(sb => sb.SitioId).IsRequired();
+                entity.Property(sb => sb.BhwId).HasMaxLength(450).IsRequired();
+
+                entity.Property(sb => sb.AssignedAt).HasColumnType("datetime(6)").IsRequired();
+
+                // Relationship to Sitio
+                entity.HasOne(sb => sb.Sitio)
+                      .WithMany(s => s.SitioBhws)
+                      .HasForeignKey(sb => sb.SitioId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // Relationship to ApplicationUser (BHW). We use .WithMany() (no navigation required on ApplicationUser),
+                // but if you add ICollection<SitioBhw> SitioBhws on ApplicationUser you can replace .WithMany() with .WithMany(u => u.SitioBhws)
+                entity.HasOne(sb => sb.Bhw)
+                      .WithMany() // or .WithMany(u => u.SitioBhws) if ApplicationUser defines that navigation
+                      .HasForeignKey(sb => sb.BhwId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
 
             // Identity tables name tuning (optional)
             builder.Entity<ApplicationUser>().ToTable("AspNetUsers");

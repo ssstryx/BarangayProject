@@ -1,0 +1,113 @@
+﻿@using BarangayProject.Models.BhwModel
+@model IEnumerable<Household>
+
+@{
+    Layout = "~/Views/Shared/_BhwLayout.cshtml";
+    ViewData["Title"] = "Archived Households";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+
+<div class="container-fluid py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h2 class="mb-1 fw-bold">Archived Households</h2>
+            <p class="text-muted mb-0">List of soft-deleted/archived households.</p>
+        </div>
+        <div>
+            <a asp-action="Households" class="btn btn-outline-secondary btn-sm">Back to active households</a>
+        </div>
+    </div>
+
+    @if (!Model?.Any() ?? true)
+    {
+        <div class="alert alert-info">No archived households found.</div>
+    }
+    else
+    {
+        <table class="table table-sm table-striped">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Family Head</th>
+                    <th>Sitio</th>
+                    <th>Archived At</th>
+                    <th>Archived By</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var hh in Model)
+                {
+                    <tr>
+                        <td>@hh.Id</td>
+                        <td>@hh.FamilyHead</td>
+                        <td>@(hh.Sitio?.Name ?? "-")</td>
+                        <td>@(hh.ArchivedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                        <td>@(hh.ArchivedBy ?? "-")</td>
+                        <td class="text-end">
+                            <a asp-action="ViewHousehold"
+                               asp-route-id="@hh.Id"
+                               asp-route-from="archived"
+                               class="btn btn-sm btn-outline-primary me-1">View</a>
+
+                            <form asp-action="RestoreHousehold" method="post" class="d-inline restore-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@hh.Id" />
+                                <button type="button" class="btn btn-sm btn-success restore-btn">Restore</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        (function () {
+            // Toasts (optional: show server messages like success/error)
+            const succ = '@(TempData["SuccessMessage"] ?? "")'.trim();
+            const err = '@(TempData["ErrorMessage"] ?? "")'.trim();
+            if (succ) {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: succ, showConfirmButton: false, timer: 2200 });
+            } else if (err) {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err, showConfirmButton: false, timer: 2800 });
+            }
+
+            // Intercept restore forms and show a SweetAlert2 confirm
+            document.querySelectorAll('.restore-form').forEach(function (form) {
+                const btn = form.querySelector('.restore-btn');
+                if (!btn) return;
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    // find family head text (for nicer message). We can find <tr> ancestor
+                    const tr = form.closest('tr');
+                    let name = 'this household';
+                    if (tr) {
+                        const nameCell = tr.querySelector('td:nth-child(2)');
+                        if (nameCell) name = nameCell.textContent.trim() || name;
+                    }
+
+                    Swal.fire({
+                        title: 'Restore this household?',
+                        html: `Restore <strong>${name}</strong> from archive?`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, restore',
+                        cancelButtonText: 'Cancel',
+                        confirmButtonColor: '#198754' // green similar to restore
+                    }).then(result => {
+                        if (result.isConfirmed) {
+                            // submit the underlying form which contains antiforgery token
+                            form.submit();
+                        }
+                    });
+                });
+            });
+        })();
+    </script>
+}

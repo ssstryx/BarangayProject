@@ -1,4 +1,5 @@
-﻿@model IEnumerable<BarangayProject.Models.Household>
+﻿@using BarangayProject.Models.BhwModel
+@model IEnumerable<Household>
 
 @{
     Layout = "~/Views/Shared/_BhwLayout.cshtml";
@@ -12,7 +13,6 @@
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
             <h2 class="mb-1 fw-bold">Households</h2>
-            <p class="text-muted mb-0">Manage registered households in the barangay.</p>
         </div>
         <div class="d-flex gap-2">
             <a asp-action="ArchivedHouseholds" class="btn btn-outline-secondary">View Archive</a>
@@ -34,7 +34,7 @@
     <div class="row mb-3 mt-3">
         <div class="col-md-6">
             <form method="get" class="d-flex" id="householdsSearchForm" onsubmit="return false;">
-                <input id="householdsSearchInput" name="search" value="@currentSearch" class="form-control me-2" placeholder="Type to search (ID, Family Head)..." autocomplete="off" />
+                <input id="householdsSearchInput" name="search" value="@currentSearch" class="form-control me-2" placeholder="Type to search..." autocomplete="off" />
                 <button id="householdsSearchBtn" class="btn btn-primary me-2">Search</button>
                 <a class="btn btn-outline-secondary" href="@Url.Action("Households", "Bhw")">Clear</a>
             </form>
@@ -46,9 +46,10 @@
             <table id="householdsTable" class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th style="width:140px">Household ID</th>
-                        <th>Family Head</th>
-                        <th style="width:260px">Actions</th>
+                        <th style="width:120px;">Household ID</th>
+                        <th style="width:260px;">Family Head</th>
+                        <th style="width:160px;">Date Added</th>
+                        <th style="width:200px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -64,9 +65,19 @@
                         {
                             foreach (var h in Model)
                             {
+                                var createdIso = h.CreatedAt != DateTime.MinValue
+                                ? h.CreatedAt.ToString("o")
+                                : "";
+
                                 <tr data-familyhead="@h.FamilyHead" data-id="@h.Id">
                                     <td class="text-mono small id-cell">@h.Id</td>
                                     <td>@h.FamilyHead</td>
+                                    <td class="small text-muted">
+                                        @(
+                                           h.CreatedAt == default(DateTime) ? "-" :
+                                           h.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")
+                                         )
+                                    </td>
                                     <td>
                                         <a asp-action="ViewHousehold" asp-route-id="@h.Id" class="btn btn-outline-primary btn-sm me-1">View</a>
                                         <a asp-action="EditHousehold" asp-route-id="@h.Id" class="btn btn-outline-warning btn-sm me-1">Edit</a>
@@ -77,7 +88,6 @@
                                             <input type="hidden" name="id" value="@h.Id" />
                                             <button type="button" class="btn btn-outline-danger btn-sm archive-btn" data-name="@h.FamilyHead">Archive</button>
                                         </form>
-
                                     </td>
                                 </tr>
                             }
@@ -96,6 +106,22 @@
 
     .id-cell {
         color: #495057;
+    }
+
+    #householdsTable td,
+    #householdsTable th {
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+    }
+
+    #householdsTable td {
+        font-size: 15px;
+    }
+
+    #householdsTable th {
+        font-size: 14px;
+        font-weight: 600;
+        text-transform: uppercase;
     }
 </style>
 

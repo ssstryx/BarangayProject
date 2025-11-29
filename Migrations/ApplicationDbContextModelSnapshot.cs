@@ -19,7 +19,7 @@ namespace BarangayProject.Migrations
                 .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
-            modelBuilder.Entity("BarangayProject.Models.ApplicationUser", b =>
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(191)
@@ -110,7 +110,7 @@ namespace BarangayProject.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.AuditLog", b =>
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.AuditLog", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -162,7 +162,134 @@ namespace BarangayProject.Migrations
                     b.ToTable("AuditLogs", (string)null);
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.Household", b =>
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.Sitio", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("ApplicationUserId")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationUserId");
+
+                    b.ToTable("Sitios", (string)null);
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.SitioBhw", b =>
+                {
+                    b.Property<int>("SitioId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("BhwId")
+                        .HasMaxLength(450)
+                        .HasColumnType("varchar(450)");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("SitioId", "BhwId");
+
+                    b.HasIndex("BhwId");
+
+                    b.ToTable("SitioBhws", (string)null);
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.SystemConfiguration", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("LogoFileName")
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<byte>("MaintenanceMode")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<byte>("SidebarCompact")
+                        .HasColumnType("tinyint unsigned");
+
+                    b.Property<string>("SiteName")
+                        .IsRequired()
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.Property<string>("ThemeName")
+                        .IsRequired()
+                        .HasMaxLength(191)
+                        .HasColumnType("varchar(191)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SystemConfigurations");
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.UserProfile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("BirthDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("MiddleName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("SitioId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("varchar(450)");
+
+                    b.Property<int?>("UserNumber")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("UserProfiles", (string)null);
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.BhwModel.Household", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -172,7 +299,6 @@ namespace BarangayProject.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("ArchivedBy")
-                        .IsRequired()
                         .HasMaxLength(191)
                         .HasColumnType("varchar(191)");
 
@@ -181,7 +307,7 @@ namespace BarangayProject.Migrations
 
                     b.Property<string>("Details")
                         .HasMaxLength(191)
-                        .HasColumnType("varchar(191)");
+                        .HasColumnType("text");
 
                     b.Property<string>("FamilyHead")
                         .IsRequired()
@@ -191,15 +317,20 @@ namespace BarangayProject.Migrations
                     b.Property<bool>("IsArchived")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<int?>("SitioId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Households");
+                    b.HasIndex("SitioId");
+
+                    b.ToTable("Households", (string)null);
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.HouseholdHealth", b =>
+            modelBuilder.Entity("BarangayProject.Models.BhwModel.HouseholdHealth", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -244,7 +375,7 @@ namespace BarangayProject.Migrations
                     b.ToTable("HouseholdHealth");
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.HouseholdSanitation", b =>
+            modelBuilder.Entity("BarangayProject.Models.BhwModel.HouseholdSanitation", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -285,11 +416,20 @@ namespace BarangayProject.Migrations
                     b.ToTable("HouseholdSanitation");
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.Resident", b =>
+            modelBuilder.Entity("BarangayProject.Models.BhwModel.Resident", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    b.Property<int?>("Age")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Education")
                         .IsRequired()
@@ -346,118 +486,6 @@ namespace BarangayProject.Migrations
                     b.HasIndex("HouseholdId");
 
                     b.ToTable("Residents");
-                });
-
-            modelBuilder.Entity("BarangayProject.Models.Sitio", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<string>("AssignedBhwId")
-                        .HasMaxLength(450)
-                        .HasColumnType("varchar(450)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Location")
-                        .HasMaxLength(250)
-                        .HasColumnType("varchar(250)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssignedBhwId");
-
-                    b.ToTable("Sitios", (string)null);
-                });
-
-            modelBuilder.Entity("BarangayProject.Models.SystemConfiguration", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("LogoFileName")
-                        .HasMaxLength(191)
-                        .HasColumnType("varchar(191)");
-
-                    b.Property<byte>("MaintenanceMode")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<byte>("SidebarCompact")
-                        .HasColumnType("tinyint unsigned");
-
-                    b.Property<string>("SiteName")
-                        .IsRequired()
-                        .HasMaxLength(191)
-                        .HasColumnType("varchar(191)");
-
-                    b.Property<string>("ThemeName")
-                        .IsRequired()
-                        .HasMaxLength(191)
-                        .HasColumnType("varchar(191)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("SystemConfigurations");
-                });
-
-            modelBuilder.Entity("BarangayProject.Models.UserProfile", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("BirthDate")
-                        .HasColumnType("date");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("FirstName")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("LastName")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<string>("MiddleName")
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<int>("SitioId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("varchar(450)");
-
-                    b.Property<int?>("UserNumber")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId")
-                        .IsUnique();
-
-                    b.ToTable("UserProfiles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -606,75 +634,101 @@ namespace BarangayProject.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.ApplicationUser", b =>
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.ApplicationUser", b =>
                 {
-                    b.HasOne("BarangayProject.Models.Sitio", "Sitio")
+                    b.HasOne("BarangayProject.Models.AdminModel.Sitio", "Sitio")
                         .WithMany()
                         .HasForeignKey("SitioId");
 
                     b.Navigation("Sitio");
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.AuditLog", b =>
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.AuditLog", b =>
                 {
-                    b.HasOne("BarangayProject.Models.ApplicationUser", null)
+                    b.HasOne("BarangayProject.Models.AdminModel.ApplicationUser", null)
                         .WithMany("AuditLogs")
                         .HasForeignKey("ApplicationUserId")
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.HouseholdHealth", b =>
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.Sitio", b =>
                 {
-                    b.HasOne("BarangayProject.Models.Household", "Household")
+                    b.HasOne("BarangayProject.Models.AdminModel.ApplicationUser", null)
+                        .WithMany("AssignedSitios")
+                        .HasForeignKey("ApplicationUserId");
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.SitioBhw", b =>
+                {
+                    b.HasOne("BarangayProject.Models.AdminModel.ApplicationUser", "Bhw")
+                        .WithMany()
+                        .HasForeignKey("BhwId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BarangayProject.Models.AdminModel.Sitio", "Sitio")
+                        .WithMany("SitioBhws")
+                        .HasForeignKey("SitioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bhw");
+
+                    b.Navigation("Sitio");
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.UserProfile", b =>
+                {
+                    b.HasOne("BarangayProject.Models.AdminModel.ApplicationUser", "User")
+                        .WithOne("Profile")
+                        .HasForeignKey("BarangayProject.Models.AdminModel.UserProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.BhwModel.Household", b =>
+                {
+                    b.HasOne("BarangayProject.Models.AdminModel.Sitio", "Sitio")
+                        .WithMany("Households")
+                        .HasForeignKey("SitioId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Sitio");
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.BhwModel.HouseholdHealth", b =>
+                {
+                    b.HasOne("BarangayProject.Models.BhwModel.Household", "Household")
                         .WithOne("Health")
-                        .HasForeignKey("BarangayProject.Models.HouseholdHealth", "HouseholdId")
+                        .HasForeignKey("BarangayProject.Models.BhwModel.HouseholdHealth", "HouseholdId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Household");
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.HouseholdSanitation", b =>
+            modelBuilder.Entity("BarangayProject.Models.BhwModel.HouseholdSanitation", b =>
                 {
-                    b.HasOne("BarangayProject.Models.Household", "Household")
+                    b.HasOne("BarangayProject.Models.BhwModel.Household", "Household")
                         .WithOne("Sanitation")
-                        .HasForeignKey("BarangayProject.Models.HouseholdSanitation", "HouseholdId")
+                        .HasForeignKey("BarangayProject.Models.BhwModel.HouseholdSanitation", "HouseholdId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Household");
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.Resident", b =>
+            modelBuilder.Entity("BarangayProject.Models.BhwModel.Resident", b =>
                 {
-                    b.HasOne("BarangayProject.Models.Household", "Household")
+                    b.HasOne("BarangayProject.Models.BhwModel.Household", "Household")
                         .WithMany("Residents")
                         .HasForeignKey("HouseholdId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Household");
-                });
-
-            modelBuilder.Entity("BarangayProject.Models.Sitio", b =>
-                {
-                    b.HasOne("BarangayProject.Models.ApplicationUser", "AssignedBhw")
-                        .WithMany("AssignedSitios")
-                        .HasForeignKey("AssignedBhwId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("AssignedBhw");
-                });
-
-            modelBuilder.Entity("BarangayProject.Models.UserProfile", b =>
-                {
-                    b.HasOne("BarangayProject.Models.ApplicationUser", "User")
-                        .WithOne("Profile")
-                        .HasForeignKey("BarangayProject.Models.UserProfile", "UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -688,7 +742,7 @@ namespace BarangayProject.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("BarangayProject.Models.ApplicationUser", null)
+                    b.HasOne("BarangayProject.Models.AdminModel.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -697,7 +751,7 @@ namespace BarangayProject.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("BarangayProject.Models.ApplicationUser", null)
+                    b.HasOne("BarangayProject.Models.AdminModel.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -712,7 +766,7 @@ namespace BarangayProject.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BarangayProject.Models.ApplicationUser", null)
+                    b.HasOne("BarangayProject.Models.AdminModel.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -721,14 +775,14 @@ namespace BarangayProject.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("BarangayProject.Models.ApplicationUser", null)
+                    b.HasOne("BarangayProject.Models.AdminModel.ApplicationUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.ApplicationUser", b =>
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.ApplicationUser", b =>
                 {
                     b.Navigation("AssignedSitios");
 
@@ -738,7 +792,14 @@ namespace BarangayProject.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("BarangayProject.Models.Household", b =>
+            modelBuilder.Entity("BarangayProject.Models.AdminModel.Sitio", b =>
+                {
+                    b.Navigation("Households");
+
+                    b.Navigation("SitioBhws");
+                });
+
+            modelBuilder.Entity("BarangayProject.Models.BhwModel.Household", b =>
                 {
                     b.Navigation("Health");
 

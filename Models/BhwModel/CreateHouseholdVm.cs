@@ -1,7 +1,7 @@
 ﻿// Models/CreateHouseholdVm.cs
 using System.Collections.Generic;
 
-namespace BarangayProject.Models
+namespace BarangayProject.Models.BhwModel
 {
     // ViewModel for CreateHousehold form.
     // IMPORTANT: keep most properties nullable so they are not implicitly required
@@ -59,6 +59,14 @@ namespace BarangayProject.Models
 
         // Health "Others feeding" specify
         public string? OthersFeedingSpecify { get; set; }
+
+        public DateTime? FatherDateOfBirth { get; set; }
+        public DateTime? MotherDateOfBirth { get; set; }
+
+        public int? MotherAge { get; set; }
+        public int? FatherAge { get; set; }
+
+        public int? Age { get; set; }
     }
 
     public class ChildVm
@@ -73,5 +81,9 @@ namespace BarangayProject.Models
         public string? Education { get; set; }
         public string? EducationOther { get; set; }
         public string? Sex { get; set; }
+
+        public DateTime? DateOfBirth { get; set; }
+        public int? Age { get; set; }
+
     }
 }

@@ -1,8 +1,10 @@
-﻿@using Microsoft.AspNetCore.Identity
-@using BarangayProject.Models
-@using BarangayProject.Data
-@using Microsoft.EntityFrameworkCore
+﻿@using System.Linq
 @using System.Text.RegularExpressions
+@using BarangayProject.Data
+@using BarangayProject.Models
+@using BarangayProject.Models.AdminModel
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
 
@@ -242,35 +244,94 @@
                         color: #072054;
                     }
 
-            /* ---------- changed: logout area at bottom with white button ---------- */
-            .sidebar .logout-bottom {
-                padding: 16px;
-                background: transparent;
-                border-top: 0;
+
+        /* parent: make Manage Sitios look like other active items and match size */
+        .sidebar-dropdown .btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px; /* match .sidebar nav a */
+            text-align: left;
+            width: 100%;
+            border-radius: 8px;
+            font-weight: 500; /* same base weight as top-level links */
+            color: rgba(248,250,252,0.95);
+            background: transparent;
+            transition: background 0.18s, color 0.12s;
+            margin-bottom: 4px;
+        }
+
+            .sidebar-dropdown .btn i {
+                width: 22px;
+                font-size: 1.02rem;
             }
 
-                .sidebar .logout-bottom form {
-                    margin: 0;
-                }
-
-            .sidebar .logout-btn-white {
-                width: 100%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-                padding: 10px 12px;
-                border-radius: 10px;
-                border: 0;
-                background: #ffffff;
-                color: #072054;
+            /* active parent style (white background) */
+            .sidebar-dropdown .btn.active {
+                background-color: #ffffff !important;
+                color: #072054 !important;
                 font-weight: 700;
-                box-shadow: 0 6px 18px rgba(3, 37, 99, 0.12);
+                box-shadow: 0 6px 18px rgba(0,0,0,0.06);
             }
 
-                .sidebar .logout-btn-white i {
-                    font-size: 1.05rem;
+                .sidebar-dropdown .btn.active i {
+                    color: #072054 !important;
                 }
+
+        /* children: keep neutral (no big white background) */
+        .sidebar-dropdown .nav-link {
+            background: transparent;
+            color: rgba(248,250,252,0.95);
+            font-weight: 500;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            border-radius: 6px;
+        }
+
+            /* child hover style subtle */
+            .sidebar-dropdown .nav-link:hover {
+                background-color: rgba(255,255,255,0.06);
+                color: #fff;
+            }
+
+            /* ensure child links never get the big white 'active' treatment */
+            .sidebar-dropdown .nav-link.active,
+            .sidebar-dropdown .nav-link[aria-current="page"] {
+                background: transparent !important;
+                color: rgba(248,250,252,0.95) !important;
+                font-weight: 600 !important;
+            }
+
+
+        /* ---------- changed: logout area at bottom with white button ---------- */
+        .sidebar .logout-bottom {
+            padding: 16px;
+            background: transparent;
+            border-top: 0;
+        }
+
+            .sidebar .logout-bottom form {
+                margin: 0;
+            }
+
+        .sidebar .logout-btn-white {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 0;
+            background: #ffffff;
+            color: #072054;
+            font-weight: 700;
+            box-shadow: 0 6px 18px rgba(3, 37, 99, 0.12);
+        }
+
+            .sidebar .logout-btn-white i {
+                font-size: 1.05rem;
+            }
 
         .main-content {
             margin-left: var(--sidebar-width);
@@ -330,6 +391,25 @@
 
             return string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase) ? "active" : "";
         }
+
+        private string SitioChildActive(string action)
+        {
+            var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+            return string.Equals(currentAction, action, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+        }
+
+        // helper for the Manage Sitios sidebar group so it highlights when on any sitio-related page
+        private string ManageSitiosActiveGroup()
+        {
+            var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+            var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+
+            if (!string.Equals(currentController, "Admin", StringComparison.OrdinalIgnoreCase))
+                return "";
+
+            var actions = new[] { "ManageSitios", "CreateSitio", "AssignBhw", "AssignSitioSelect", "EditSitio" };
+            return actions.Contains(currentAction) ? "active" : "";
+        }
     }
 
     <div class="sidebar" id="adminSidebar">
@@ -340,7 +420,7 @@
 
                 @{
                     // show only role under system name (no "Logged in as:" text)
-                    var userManager = Context.RequestServices.GetService<UserManager<BarangayProject.Models.ApplicationUser>>();
+                    var userManager = Context.RequestServices.GetService<UserManager<ApplicationUser>>();
                     var user = await userManager.GetUserAsync(User);
                     var roles = user != null ? await userManager.GetRolesAsync(user) : new List<string>();
                     var role = roles.FirstOrDefault() ?? "User";
@@ -351,7 +431,24 @@
             <nav class="mb-3">
                 <a asp-controller="Admin" asp-action="Index" class='@IsActive("Admin", "Index")'><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
                 <a asp-controller="Admin" asp-action="ManageUsers" class='@IsActive("Admin", "ManageUsers")'><i class="bi bi-people me-2"></i> Manage Users</a>
-                <a asp-controller="Admin" asp-action="ManageSitios" class='@IsActive("Admin", "ManageSitios")'><i class="bi bi-geo-alt me-2"></i> Manage Sitios</a>
+
+                @* ---------- Manage Sitios group (collapsible) ---------- *@
+                <div class="sidebar-dropdown mb-2">
+                    <button id="manageSitiosBtn" class="btn w-100 text-start d-flex align-items-center justify-content-between px-3 py-2 @(ManageSitiosActiveGroup() == "active" ? "active" : "")"
+                            data-bs-toggle="collapse" data-bs-target="#manageSitiosMenu" aria-expanded="false">
+                        <span><i class="bi bi-geo-alt me-2"></i> Manage Sitios</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+
+                    <div class="collapse @((ManageSitiosActiveGroup() == "active") ? "show" : "")" id="manageSitiosMenu">
+                        <nav class="d-flex flex-column small">
+                            <a class="nav-link px-3 py-2 @(SitioChildActive("ManageSitios"))" asp-controller="Admin" asp-action="ManageSitios">List of Sitios</a>
+                            <a class="nav-link px-3 py-2 @(SitioChildActive("CreateSitio"))" asp-controller="Admin" asp-action="CreateSitio">Add Sitio</a>
+                            <a class="nav-link px-3 py-2 @(SitioChildActive("AssignSitioSelect") ?? SitioChildActive("AssignBhw"))" asp-controller="Admin" asp-action="AssignSitioSelect">Assign Sitio</a>
+                        </nav>
+                    </div>
+                </div>
+
                 <a asp-controller="Admin" asp-action="Reports" class='@IsActive("Admin", "Reports")'><i class="bi bi-bar-chart-line me-2"></i> Reports</a>
                 <a asp-controller="Admin" asp-action="Settings" class='@IsActive("Admin", "Settings")'><i class="bi bi-gear me-2"></i> Settings</a>
             </nav>
@@ -417,6 +514,28 @@
             if (confirmBtn && logoutForm) {
                 confirmBtn.addEventListener('click', function (e) {
                     logoutForm.submit();
+                });
+            }
+
+            // --- Manage Sitios collapse behavior (improved) ---
+            const manageMenuEl = document.getElementById('manageSitiosMenu');
+            const manageBtn = document.getElementById('manageSitiosBtn');
+
+            if (manageMenuEl && manageBtn) {
+                manageMenuEl.addEventListener('shown.bs.collapse', function () {
+                    // remove active from other top-level links (so only this parent is white)
+                    document.querySelectorAll('.sidebar > .inner nav > a.active').forEach(el => el.classList.remove('active'));
+                    manageBtn.classList.add('active');
+                });
+
+                manageMenuEl.addEventListener('hidden.bs.collapse', function () {
+                    // restore server-side intent: keep parent active only if ManageSitiosActiveGroup() returned "active"
+                    var serverActive = '@(ManageSitiosActiveGroup() == "active" ? "true" : "false")';
+                    if (serverActive !== "true") {
+                        manageBtn.classList.remove('active');
+                    } else {
+                        manageBtn.classList.add('active');
+                    }
                 });
             }
         });

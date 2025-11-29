@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace BarangayProject.Models
+namespace BarangayProject.Models.BhwModel
 {
     public class HouseholdSanitation
     {

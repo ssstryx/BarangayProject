@@ -1,0 +1,455 @@
+﻿@using System
+@using System.Globalization
+@using System.Linq
+@using BarangayProject.Models.BhwModel
+@model Household
+
+@{
+    Layout = "~/Views/Shared/_BhwLayout.cshtml";
+    ViewData["Title"] = "Household Details";
+
+    // prefer explicit `from` query param (e.g. ?from=archived) so Back can return to the correct list
+    var from = Context.Request.Query["from"].ToString();
+
+    // helper to compute age from nullable DOB (returns null when unknown)
+    Func<DateTime?, int?> ComputeAge = (dob) =>
+    {
+        if (!dob.HasValue) return null;
+        var today = DateTime.Today;
+        var birth = dob.Value.Date;
+        var age = today.Year - birth.Year;
+        if (today.Month < birth.Month || (today.Month == birth.Month && today.Day < birth.Day)) age--;
+        return age >= 0 ? (int?)age : null;
+    };
+
+    string FormatDate = "MMM d, yyyy"; // e.g. Jan 2, 1990
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<style>
+    /* modern card + table styling */
+    .details-hero {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+        .details-hero .title {
+            line-height: 1;
+        }
+
+    .card-compact {
+        border-radius: 12px;
+        box-shadow: 0 6px 18px rgba(18, 38, 84, 0.06);
+        border: 1px solid rgba(16, 24, 40, 0.04);
+    }
+
+    .meta-row {
+        color: #6b7280;
+        font-weight: 600;
+    }
+
+    .muted {
+        color: #6b7280;
+    }
+
+    .resident-role {
+        font-weight: 700;
+        font-size: 0.92rem;
+    }
+
+    .small-muted {
+        font-size: 0.9rem;
+        color: #6b7280;
+    }
+
+    .kv-term {
+        color: #6b7280;
+        font-weight: 600;
+    }
+
+    .kv-val {
+        font-weight: 600;
+    }
+
+    .table-compact th, .table-compact td {
+        padding: .5rem .6rem;
+        vertical-align: middle;
+    }
+
+    .badge-role {
+        background: #eef2ff;
+        color: #0b3bff;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: .3rem .45rem;
+    }
+
+    @@media (max-width:767px) {
+        .details-hero {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+</style>
+
+@* Helper placed in a Razor @functions block so we can call it from the markup *@
+@functions {
+    // Robust DOB extractor: handles common property names (case-insensitive),
+    // DateTime / DateTime? / DateTimeOffset / nullable string, and proxy types.
+    public DateTime? GetDobFromResident(object resident)
+    {
+        if (resident == null) return null;
+
+        Type t = resident.GetType();
+
+        // handle EF proxy types (Castle/EF proxies) by falling back to base type
+        if (t.Namespace != null && (t.Namespace.Contains("Castle") || t.Namespace.Contains("Proxy") || t.Name.Contains("Proxy")))
+        {
+            t = t.BaseType ?? t;
+        }
+
+        var candidateNames = new[] { "DateOfBirth", "DateOfBirthUtc", "DOB", "Dob", "BirthDate", "Birthdate", "Date_Of_Birth" };
+
+        foreach (var name in candidateNames)
+        {
+            var p = t.GetProperty(name, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+            if (p == null) continue;
+
+            var raw = p.GetValue(resident);
+            if (raw == null) continue;
+
+            // DateTime
+            if (raw is DateTime dt)
+            {
+                if (dt == DateTime.MinValue) return null;
+                return dt;
+            }
+
+            // Nullable<DateTime>
+            if (raw is DateTime?)
+            {
+                var ndt = (DateTime?)raw;
+                if (!ndt.HasValue || ndt.Value == DateTime.MinValue) return null;
+                return ndt.Value;
+            }
+
+            // DateTimeOffset
+            if (raw is DateTimeOffset dto)
+            {
+                return dto.DateTime;
+            }
+
+            // string parse fallback
+            if (raw is string s && !string.IsNullOrWhiteSpace(s))
+            {
+                if (DateTime.TryParse(s, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeLocal, out var parsed))
+                {
+                    if (parsed == DateTime.MinValue) return null;
+                    return parsed;
+                }
+                if (DateTime.TryParse(s, out parsed))
+                {
+                    if (parsed == DateTime.MinValue) return null;
+                    return parsed;
+                }
+            }
+        }
+
+        // last-resort: look for any property name containing "birth" or "dob"
+        // var fallbackProps = t.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+        //                      .Where(p => p.Name.IndexOf("birth", StringComparison.OrdinalIgnoreCase) >= 0
+        //                               || p.Name.IndexOf("dob", StringComparison.OrdinalIgnoreCase) >= 0);
+
+        // foreach (var p in fallbackProps)
+        // {
+        //     try
+        //     {
+        //         var raw = p.GetValue(resident);
+        //         if (raw == null) continue;
+        //         if (raw is DateTime dt)
+        //         {
+        //             if (dt == DateTime.MinValue) continue;
+        //             return dt;
+        //         }
+        //         if (raw is DateTime?)
+        //         {
+        //             var ndt = (DateTime?)raw;
+        //             if (!ndt.HasValue || ndt.Value == DateTime.MinValue) continue;
+        //             return ndt.Value;
+        //         }
+        //         if (raw is string s && DateTime.TryParse(s, out var parsed))
+        //         {
+        //             if (parsed == DateTime.MinValue) continue;
+        //             return parsed;
+        //         }
+        //     }
+        //     catch { /* ignore property read errors */ }
+        // }
+
+        // optional: attempt to parse JSON stored in Details property (if present)
+        try
+        {
+            var detailsProp = t.GetProperty("Details", System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
+            if (detailsProp != null)
+            {
+                var detailsVal = detailsProp.GetValue(resident) as string;
+                if (!string.IsNullOrWhiteSpace(detailsVal))
+                {
+                    // quick heuristic: look for "dateOfBirth" / "dob" in the JSON (simple parse)
+                    if (detailsVal.IndexOf("date", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        // naive search for an ISO date substring (this is only a fallback)
+                        var dateTokens = System.Text.RegularExpressions.Regex.Matches(detailsVal, @"\d{4}-\d{2}-\d{2}");
+                        if (dateTokens.Count > 0 && DateTime.TryParse(dateTokens[0].Value, out var parsed))
+                        {
+                            if (parsed != DateTime.MinValue) return parsed;
+                        }
+                    }
+                }
+            }
+        }
+        catch { /* ignore */ }
+
+        return null;
+    }
+}
+
+<div class="container py-4">
+    <div class="details-hero">
+        <div class="title">
+            <h2 class="mb-1">@Model.FamilyHead</h2>
+            <div class="small-muted">Household ID: <span class="fw-semibold">@Model.Id</span></div>
+            <div class="muted mt-1">Sitio: <span class="fw-semibold">@((Model.Sitio?.Name) ?? "Unassigned")</span></div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card card-compact p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Residents</h5>
+                    <small class="small-muted">Total: <span class="fw-semibold">@((Model.Residents?.Count() ?? 0))</span></small>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-compact mb-0">
+                        <thead>
+                            <tr>
+                                <th style="min-width:110px">Role</th>
+                                <th style="min-width:240px">Name</th>
+                                <th style="min-width:120px">Sex</th>
+                                <th style="min-width:140px">Occupation</th>
+                                <th style="min-width:160px">Education</th>
+                                <th style="min-width:140px">Date of Birth</th>
+                                <th style="min-width:80px">Age</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @if (Model.Residents != null && Model.Residents.Any())
+                            {
+                                foreach (var r in Model.Residents.OrderBy(x => x.Role).ThenBy(x => x.LastName))
+                                {
+                                    var fullName = $"{r.FirstName} {r.MiddleName} {r.LastName} {r.Extension}".Replace("  ", " ").Trim();
+                                    var detailsText = string.Empty;
+                                    var detailsProp = r.GetType().GetProperty("Details");
+                                    if (detailsProp != null)
+                                    {
+                                        var dv = detailsProp.GetValue(r);
+                                        if (dv != null) detailsText = dv.ToString();
+                                    }
+
+                                    DateTime? dob = GetDobFromResident(r);
+                                    var age = ComputeAge(dob);
+
+                                    <tr>
+                                        <td class="resident-role"><span class="badge-role">@r.Role</span></td>
+                                        <td>
+                                            <div class="fw-semibold">@fullName</div>
+                                            @if (!string.IsNullOrWhiteSpace(detailsText))
+                                            {
+                                                <div class="small-muted">@detailsText</div>
+                                            }
+                                        </td>
+
+                                        <td>@(string.IsNullOrWhiteSpace(r.Sex) ? "—" : r.Sex)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(r.Occupation) ? "—" : r.Occupation)</td>
+                                        <td>@(string.IsNullOrWhiteSpace(r.Education) ? "—" : r.Education)</td>
+
+                                        <td>
+                                            @if (dob.HasValue && dob.Value.Year > 1)
+                                            {
+                                                @dob.Value.ToString(FormatDate, CultureInfo.InvariantCulture)
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+
+                                        <td>
+                                            @if (age.HasValue)
+                                            {
+                                                @age.Value
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">No residents recorded.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @{
+                var debugFlag = Context.Request.Query["debug"].ToString();
+            }
+            @if (!string.IsNullOrEmpty(debugFlag) && (debugFlag == "1" || debugFlag.Equals("true", StringComparison.OrdinalIgnoreCase)))
+            {
+                <div class="card mb-3 p-3 border-warning" style="background:#fffbea;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>DEBUG — first resident simple JSON (remove when done)</strong>
+                        <small class="text-muted">Shown because <code>?debug=1</code> present</small>
+                    </div>
+
+                    @{
+                        try
+                        {
+                            if (Model.Residents == null || !Model.Residents.Any())
+                            {
+                                <div class="text-muted">No residents to inspect.</div>
+                                ;
+                            }
+                            else
+                            {
+                                var first = Model.Residents.First();
+                                // build a simple dictionary of scalar/string/datetime properties only (avoid navigation props / cycles)
+                                var simple = new System.Collections.Generic.Dictionary<string, object?>();
+                                foreach (var p in first.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+                                {
+                                    try
+                                    {
+                                        var t = p.PropertyType;
+                                        var val = p.GetValue(first);
+
+                                        if (val == null)
+                                        {
+                                            simple[p.Name] = null;
+                                            continue;
+                                        }
+
+                                        // treat date/time and primitives and strings as-is
+                                        if (t == typeof(string) || t == typeof(DateTime) || t == typeof(DateTime?) ||
+                                        t.IsPrimitive || t.IsEnum || (Nullable.GetUnderlyingType(t) != null && Nullable.GetUnderlyingType(t).IsPrimitive))
+                                        {
+                                            simple[p.Name] = val;
+                                            continue;
+                                        }
+
+                                        // else just use ToString() (safe) to avoid deeply traversing references
+                                        simple[p.Name] = val.ToString();
+                                    }
+                                    catch (Exception exProp)
+                                    {
+                                        simple[p.Name] = $"<error reading property: {exProp.Message}>";
+                                    }
+                                }
+
+                                var opts = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+                                var json = System.Text.Json.JsonSerializer.Serialize(simple, opts);
+                                <pre style="max-height:360px; overflow:auto; white-space:pre-wrap; font-size:0.85rem; margin:0.25rem 0;">@Html.Raw(json)</pre>
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            <div class="text-danger">Debug error: @ex.Message</div>
+                        }
+                    }
+                </div>
+            }
+
+    
+
+            <div class="card card-compact p-3 mb-3">
+                <h5 class="mb-2">Health</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <div class="kv-term">Mother Pregnant</div>
+                        <div class="kv-val">@((Model.Health?.MotherPregnant == true) ? "Yes" : "No")</div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="kv-term">Family Planning</div>
+                        <div class="kv-val">@((Model.Health?.FamilyPlanning == true) ? "Yes" : "No")</div>
+                    </div>
+
+                    <div class="col-md-6 mb-2">
+                        <div class="kv-term">Exclusive Breastfeeding</div>
+                        <div class="kv-val">@((Model.Health?.ExclusiveBreastfeeding == true) ? "Yes" : "No")</div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="kv-term">Mixed Feeding</div>
+                        <div class="kv-val">@((Model.Health?.MixedFeeding == true) ? "Yes" : "No")</div>
+                    </div>
+
+                    <div class="col-md-6 mb-2">
+                        <div class="kv-term">Bottle Fed</div>
+                        <div class="kv-val">@((Model.Health?.BottleFed == true) ? "Yes" : "No")</div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="kv-term">Others</div>
+                        <div class="kv-val">@((Model.Health?.OthersFeeding == true) ? (Model.Health?.OthersFeedingSpecify ?? "Yes") : "No")</div>
+                    </div>
+
+                    <div class="col-md-6 mb-2">
+                        <div class="kv-term">Using Iodized Salt</div>
+                        <div class="kv-val">@((Model.Health?.UsingIodizedSalt == true) ? "Yes" : "No")</div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="kv-term">Using Infant Replacement Formula</div>
+                        <div class="kv-val">@((Model.Health?.UsingIFR == true) ? "Yes" : "No")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card card-compact p-3 mb-3">
+                <h5 class="mb-2">Sanitation</h5>
+                <div class="mb-2">
+                    <div class="kv-term">Toilet Type</div>
+                    <div class="kv-val">@Model.Sanitation?.ToiletType</div>
+                </div>
+                <div class="mb-2">
+                    <div class="kv-term">Water Source</div>
+                    <div class="kv-val">@Model.Sanitation?.WaterSource</div>
+                </div>
+                <div class="mb-2">
+                    <div class="kv-term">Food Production Activity</div>
+                    <div class="kv-val">@Model.Sanitation?.FoodProductionActivity</div>
+                </div>
+            </div>
+
+            <div class="card card-compact p-3 mb-3">
+                <h6 class="mb-2">Quick Actions</h6>
+                <div class="d-grid gap-2">
+                    <a asp-action="EditHousehold" asp-route-id="@Model.Id" class="btn btn-outline-primary">Edit Household</a>
+                    <a asp-action="Households" class="btn btn-outline-secondary">Return to List</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

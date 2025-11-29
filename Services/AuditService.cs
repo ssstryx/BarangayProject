@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Threading.Tasks;
 using BarangayProject.Data;
-using BarangayProject.Models;
+using BarangayProject.Models.AdminModel;
+
 
 namespace BarangayProject.Services
 {
@@ -28,6 +29,8 @@ namespace BarangayProject.Services
                 Metadata = metadataJson,
                 CreatedAt = DateTime.UtcNow
             };
+
+
 
             _db.AuditLogs.Add(a);
             await _db.SaveChangesAsync();
