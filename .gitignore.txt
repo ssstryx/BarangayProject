@@ -6,6 +6,7 @@ obj/
 appsettings.Development.json
 secrets.json
 wwwroot/uploads/
+wwwroot/images/
 *.log
 Thumbs.db
 .DS_Store

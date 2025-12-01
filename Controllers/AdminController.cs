@@ -312,7 +312,9 @@ namespace BarangayProject.Controllers
             {
                 UserName = model.Email,
                 Email = model.Email,
-                DisplayName = string.IsNullOrWhiteSpace((model as dynamic)?.DisplayName?.ToString() ?? "") ? model.Email : ((model as dynamic)?.DisplayName ?? model.Email).ToString(),
+                DisplayName = (!string.IsNullOrWhiteSpace(model.FirstName) || !string.IsNullOrWhiteSpace(model.LastName))
+                ? $"{model.FirstName} {model.MiddleName ?? ""} {model.LastName}".Trim()
+                : model.Email,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -341,8 +343,9 @@ namespace BarangayProject.Controllers
                 var profile = new UserProfile
                 {
                     UserId = user.Id,
-                    FirstName = (model as dynamic)?.FirstName ?? "",
-                    LastName = (model as dynamic)?.LastName ?? "",
+                    FirstName = model.FirstName ?? "",
+                    MiddleName = model.MiddleName,
+                    LastName = model.LastName ?? "",
                     CreatedAt = DateTime.UtcNow
                 };
                 _db.UserProfiles.Add(profile);
