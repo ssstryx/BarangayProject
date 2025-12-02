@@ -1,0 +1,101 @@
+﻿@model BarangayProject.Models.BhwModel.ChangePasswordVm
+@{
+    Layout = "_BnsLayout";
+    ViewData["Title"] = "Settings";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex align-items-center justify-content-start mb-3">
+        <br><br>
+        <h2 class="fw-bold mb-1">Settings</h2>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header"><strong>Change Password</strong></div>
+        <div class="card-body">
+            <form asp-action="Settings" method="post" novalidate>
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label asp-for="CurrentPassword" class="form-label"></label>
+                    <div class="input-with-icon">
+                        <input asp-for="CurrentPassword" class="form-control" />
+                        <button type="button" class="btn-eye" id="toggleCurrent"><i class="bi bi-eye"></i></button>
+                    </div>
+                    <span asp-validation-for="CurrentPassword" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="NewPassword" class="form-label"></label>
+                    <div class="input-with-icon">
+                        <input asp-for="NewPassword" class="form-control" />
+                        <button type="button" class="btn-eye" id="toggleNew"><i class="bi bi-eye"></i></button>
+                    </div>
+                    <span asp-validation-for="NewPassword" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ConfirmPassword" class="form-label"></label>
+                    <div class="input-with-icon">
+                        <input asp-for="ConfirmPassword" class="form-control" />
+                        <button type="button" class="btn-eye" id="toggleConfirm"><i class="bi bi-eye"></i></button>
+                    </div>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
+                    <button type="submit" class="btn btn-primary">Change Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function() {
+            function toggle(btnId, selector){
+                const btn = document.getElementById(btnId);
+                const input = document.querySelector(selector);
+                if(!btn || !input) return;
+                btn.addEventListener('click', () => {
+                    if (input.type === 'password') { input.type = 'text'; btn.innerHTML = '<i class="bi bi-eye-slash"></i>'; }
+                    else { input.type = 'password'; btn.innerHTML = '<i class="bi bi-eye"></i>'; }
+                    input.focus();
+                });
+            }
+            toggle('toggleCurrent','[name="CurrentPassword"]');
+            toggle('toggleNew','[name="NewPassword"]');
+            toggle('toggleConfirm','[name="ConfirmPassword"]');
+        })();
+    </script>
+    <style>
+        .input-with-icon {
+            position: relative;
+        }
+
+            .input-with-icon .form-control {
+                padding-right: 46px;
+            }
+
+        .btn-eye {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            border: 0;
+            background: transparent;
+        }
+    </style>
+}
+

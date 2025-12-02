@@ -1,0 +1,67 @@
+﻿@model BarangayProject.Controllers.AssignSitioVm
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Assign Sitio";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <h3 class="mb-4 text-center">Assign Sitio</h3>
+
+            <form asp-action="AssignSitioSelect" method="post" id="sitioSelectForm">
+                @Html.AntiForgeryToken()
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="sitioId" class="form-label">Sitio</label>
+
+                            <select id="sitioId" name="sitioId" class="form-select" required>
+                                <option value="">-- choose sitio --</option>
+
+                                @if (Model?.Sitios == null || !Model.Sitios.Any())
+                                {
+                                    <option disabled>No sitios available</option>
+                                }
+                                else
+                                {
+                                    foreach (var s in Model.Sitios)
+                                    {
+                                        var isSelected = (int.TryParse(s.Value, out var v) && v == Model.SelectedSitioId) ? "selected" : "";
+                                        <option value="@s.Value" selected="@(isSelected == "selected" ? "selected" : null)">@s.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+
+                        <div class="text-muted small">Pick a sitio then click Continue to choose and assign one or more BHWs to it.</div>
+                    </div>
+
+                    <div class="card-footer d-flex justify-content-between">
+                        <a asp-action="ManageSitios" class="btn btn-outline-secondary">Cancel</a>
+                        <button id="continueBtn" type="submit" class="btn btn-primary" disabled>Continue</button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var sitioSelect = document.getElementById('sitioId');
+            var cont = document.getElementById('continueBtn');
+            if (!sitioSelect || !cont) return;
+
+            function update() { cont.disabled = !sitioSelect.value; }
+            sitioSelect.addEventListener('change', update);
+
+            // initialize enable state (in case server preselected a sitio)
+            update();
+        })();
+    </script>
+}

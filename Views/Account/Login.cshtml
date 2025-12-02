@@ -1,0 +1,122 @@
+﻿@using BarangayProject.Models.AdminModel
+@model LoginViewModel
+
+@{
+    Layout = "~/Views/Shared/_SimpleLayout.cshtml";
+    ViewData["Title"] = "Login";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+<style>
+    /* Force this login view to occupy the viewport and center the card */
+    .login-viewport {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f4f6f9;
+        z-index: 9999;
+    }
+
+    .login-card {
+        width: 400px;
+        max-width: calc(100% - 32px);
+        border-radius: 12px;
+        background: #ffffff;
+        padding: 1.8rem;
+        box-shadow: 0 8px 30px rgba(22, 28, 37, 0.08);
+        border: none;
+    }
+
+        .login-card h3 {
+            margin: 0 0 1.1rem 0;
+            text-align: center;
+            color: #1e3a8a;
+            font-weight: 600;
+            font-size: 1.4rem;
+        }
+
+    .form-label.small-text {
+        font-size: .9rem;
+    }
+
+    .btn-primary {
+        background-color: #4f6ad9;
+        border-color: #4f6ad9;
+    }
+
+        .btn-primary:hover {
+            background-color: #405fd3;
+            border-color: #405fd3;
+        }
+
+    .login-card .form-control {
+        height: 42px;
+    }
+
+    .login-card .mb-3 {
+        margin-bottom: 0.9rem;
+    }
+
+    .login-card .d-grid {
+        margin-top: 0.75rem;
+    }
+
+    .login-note {
+        text-align: center;
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin-top: 0.75rem;
+    }
+
+    /* make inline validation text smaller and spaced */
+    .field-validation-error {
+        margin-top: 6px;
+        display: block;
+        color: #dc3545;
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="login-viewport">
+    <div class="login-card">
+        <h3>Login</h3>
+
+        @* --- REMOVED top error summary. Inline field errors will show under each field only. *@
+
+        <form asp-action="Login" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ReturnUrl" />
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label small-text">Email</label>
+                <input asp-for="Email" class="form-control" placeholder="you@example.com" />
+                <span asp-validation-for="Email" class="field-validation-error"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label small-text">Password</label>
+                <input asp-for="Password" type="password" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="Password" class="field-validation-error"></span>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2 small-text">
+                <div class="form-check">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label">Remember me</label>
+                </div>
+                <a asp-action="ForgotPassword">Forgot password?</a>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">Login</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

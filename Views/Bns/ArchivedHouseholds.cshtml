@@ -1,0 +1,84 @@
+﻿@using BarangayProject.Models.BhwModel
+@model IEnumerable<Household>
+
+@{
+    Layout = "~/Views/Shared/_BnsLayout.cshtml";
+    ViewData["Title"] = "Archived Households";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+
+<div class="container-fluid py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h2 class="mb-1 fw-bold">Archived Households</h2>
+            <p class="text-muted mb-0">List of archived households (read-only).</p>
+        </div>
+        <div>
+            <a asp-controller="Bns" asp-action="Households" class="btn btn-outline-secondary btn-sm">Back to active households</a>
+        </div>
+    </div>
+
+    @if (!Model?.Any() ?? true)
+    {
+        <div class="alert alert-info">No archived households found.</div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Family Head</th>
+                                <th>Sitio</th>
+                                <th>Archived At</th>
+                                <th>Archived By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Any())
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-3">
+                                        No archived households.
+                                    </td>
+                                </tr>
+                            }
+                            else
+                            {
+                                foreach (var hh in Model)
+                                {
+                                    <tr>
+                                        <td>@hh.Id</td>
+                                        <td>@hh.FamilyHead</td>
+                                        <td>@(hh.Sitio?.Name ?? "-")</td>
+                                        <td>@(hh.ArchivedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                                        <td>@(hh.ArchivedBy ?? "-")</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        (function () {
+            const succ = '@(TempData["SuccessMessage"] ?? "")'.trim();
+            const err = '@(TempData["ErrorMessage"] ?? "")'.trim();
+            if (succ) {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: succ, showConfirmButton: false, timer: 2200 });
+            } else if (err) {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err, showConfirmButton: false, timer: 2800 });
+            }
+        })();
+    </script>
+}

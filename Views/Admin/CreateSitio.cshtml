@@ -1,0 +1,37 @@
+﻿@using BarangayProject.Models.AdminModel
+@model Sitio
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Add Sitio";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-7">
+            <h3 class="mb-4 text-center">Add Sitio</h3>
+
+            <form asp-action="CreateSitio" method="post">
+                @Html.AntiForgeryToken()
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label asp-for="Name" class="form-label">Name</label>
+                            <input asp-for="Name" class="form-control" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+                        <div class="form-text mb-2">This action only creates the Sitio. Assign BHW(s) from the Assign Sitio page.</div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <a asp-action="ManageSitios" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success">Add Sitio</button>
+                    </div>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

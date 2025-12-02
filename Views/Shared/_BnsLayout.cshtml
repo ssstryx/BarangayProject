@@ -1,0 +1,373 @@
+﻿@using System.Security.Claims
+@using System.Text.RegularExpressions
+@using System.Linq
+@using BarangayProject.Data
+@using BarangayProject.Models
+@using BarangayProject.Models.AdminModel
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@{
+    Layout = null;
+
+    var appDb = Context.RequestServices.GetService(typeof(ApplicationDbContext)) as ApplicationDbContext;
+
+    // defaults
+    string logoPath = "/images/logo.png";
+    string siteLine1 = "Sta. Isabel";
+    string siteLine2 = "Calapan City";
+
+    if (appDb != null)
+    {
+        try
+        {
+            var allConfigs = appDb.SystemConfigurations.AsNoTracking().ToList();
+            if (allConfigs != null && allConfigs.Count > 0)
+            {
+                var first = allConfigs.First();
+                var t = first.GetType();
+
+                var keyCandidates = new[] { "Key", "Name", "ConfigKey", "SettingKey", "SettingName", "SiteName" };
+                string keyPropName = keyCandidates.FirstOrDefault(c => t.GetProperty(c, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance) != null)
+                                     ?? t.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).FirstOrDefault(p => p.PropertyType == typeof(string))?.Name
+                                     ?? "Key";
+
+                var valueCandidates = new[] { "Value", "ConfigValue", "SettingValue", "Val", "Setting", "LogoFileName", "LogoPath", "SiteName" };
+                string valuePropName = valueCandidates.FirstOrDefault(c => t.GetProperty(c, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance) != null)
+                                     ?? t.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance).FirstOrDefault(p => p.PropertyType == typeof(string) && p.Name != keyPropName)?.Name
+                                     ?? "Value";
+
+                string GetConfigValue(string wantedKey)
+                {
+                    foreach (var cfg in allConfigs)
+                    {
+                        var cfgType = cfg.GetType();
+                        var kp = cfgType.GetProperty(keyPropName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                        var vp = cfgType.GetProperty(valuePropName, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
+                        if (kp == null || vp == null) continue;
+
+                        var keyVal = kp.GetValue(cfg)?.ToString();
+                        if (string.IsNullOrWhiteSpace(keyVal)) continue;
+
+                        if (string.Equals(keyVal.Trim(), wantedKey, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var val = vp.GetValue(cfg)?.ToString();
+                            return val;
+                        }
+                    }
+                    return null;
+                }
+
+                var foundSystemName = GetConfigValue("SystemName") ?? GetConfigValue("SiteName") ?? GetConfigValue("System");
+                var foundLogoPath = GetConfigValue("LogoPath") ?? GetConfigValue("LogoFileName") ?? GetConfigValue("Logo");
+
+                if (!string.IsNullOrWhiteSpace(foundLogoPath))
+                {
+                    var lp = foundLogoPath.Trim();
+                    if (lp.StartsWith("/")) logoPath = lp;
+                    else if (lp.StartsWith("~/")) logoPath = lp.Substring(1);
+                    else if (lp.IndexOf('/') >= 0) logoPath = lp;
+                    else logoPath = "/images/" + lp.TrimStart('/');
+                }
+
+                if (!string.IsNullOrWhiteSpace(foundSystemName))
+                {
+                    var sn = foundSystemName.Trim();
+                    if (sn.Contains('\n'))
+                    {
+                        var parts = sn.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        siteLine1 = parts.Length > 0 ? parts[0].Trim() : sn;
+                        siteLine2 = parts.Length > 1 ? parts[1].Trim() : siteLine2;
+                    }
+                    else if (sn.Contains('|'))
+                    {
+                        var parts = sn.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                        siteLine1 = parts.Length > 0 ? parts[0].Trim() : sn;
+                        siteLine2 = parts.Length > 1 ? parts[1].Trim() : siteLine2;
+                    }
+                    else
+                    {
+                        var tokens = sn.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (tokens.Length >= 2 && sn.Length <= 40)
+                        {
+                            siteLine1 = tokens[0].Trim();
+                            siteLine2 = string.Join(" ", tokens.Skip(1)).Trim();
+                        }
+                        else if (sn.Length <= 20)
+                        {
+                            siteLine1 = sn;
+                            siteLine2 = "";
+                        }
+                        else
+                        {
+                            siteLine1 = sn;
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // safe-fail
+        }
+    }
+
+    // sanitize combined title
+    string rawCombined = (siteLine1 + (string.IsNullOrWhiteSpace(siteLine2) ? "" : " " + siteLine2)).Trim();
+    rawCombined = Regex.Replace(rawCombined, @"\<br\s*\/?\>", " ", RegexOptions.IgnoreCase);
+    rawCombined = Regex.Replace(rawCombined, @"\<.*?\>", " ", RegexOptions.Singleline);
+    var combinedSiteTitle = Regex.Replace(rawCombined, @"\s+", " ").Trim();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - BNS Dashboard</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --sidebar-width: 240px;
+            --sidebar-top-color: #133a8a;
+            --sidebar-bottom-color: #0b57d0;
+            --accent: #0f2a72;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--sidebar-top-color) 0%, var(--sidebar-bottom-color) 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+            z-index: 1000;
+        }
+
+            .sidebar .inner {
+                overflow-y: auto;
+                padding: 20px 12px 8px 12px;
+                flex: 1 1 auto;
+            }
+
+            .sidebar .logo {
+                text-align: center;
+                margin-bottom: 8px;
+                padding: 6px 12px;
+            }
+
+                .sidebar .logo img {
+                    width: 110px;
+                    height: auto;
+                    border-radius: 50%;
+                    border: 3px solid rgba(255,255,255,0.12);
+                    display: inline-block;
+                }
+
+            .sidebar h4 {
+                font-size: 1.02rem;
+                text-align: center;
+                font-weight: 600;
+                margin-top: 8px;
+                line-height: 1.1;
+                color: rgba(255,255,255,0.95);
+                word-break: break-word;
+            }
+
+            /* role displayed below site title */
+            .sidebar .logged-role {
+                text-align: center;
+                margin-top: 6px;
+                font-size: 0.95rem;
+                color: rgba(255,255,255,0.95);
+                font-weight: 600;
+            }
+
+            .sidebar nav a {
+                display: block;
+                padding: 12px 20px;
+                text-decoration: none;
+                color: rgba(248,250,252,0.95);
+                font-weight: 500;
+                transition: background 0.18s, color 0.12s;
+                border-radius: 8px;
+                margin-bottom: 4px;
+            }
+
+                .sidebar nav a i {
+                    width: 22px;
+                    font-size: 1.02rem;
+                }
+
+                .sidebar nav a:hover {
+                    background-color: rgba(255, 255, 255, 0.07);
+                    color: #fff;
+                }
+
+                .sidebar nav a.active {
+                    background-color: #ffffff;
+                    color: #072054;
+                    font-weight: 700;
+                    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+                }
+
+            .sidebar .logout-bottom {
+                padding: 16px;
+                background: transparent;
+                border-top: 0;
+            }
+
+            .sidebar .logout-btn-white {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 12px;
+                border-radius: 10px;
+                border: 0;
+                background: #ffffff;
+                color: #072054;
+                font-weight: 700;
+                box-shadow: 0 6px 18px rgba(3, 37, 99, 0.12);
+            }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 28px;
+            min-height: 100vh;
+        }
+
+        @@media (max-width: 992px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 18px;
+            }
+
+            .sidebar .logout-bottom {
+                position: relative;
+                bottom: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    @functions {
+        private string IsActive(params string[] actions)
+        {
+            var current = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+            return actions.Any(a => string.Equals(a, current, System.StringComparison.OrdinalIgnoreCase)) ? "active" : "";
+        }
+    }
+
+    <div class="sidebar" id="bnsSidebar">
+        <div class="inner">
+            <div>
+                <div class="logo">
+                    <img src="@(logoPath)" alt="Barangay Logo" onerror="this.onerror=null;this.src='/images/logo.png';" />
+                    <h4>@Html.Raw($"{siteLine1} {siteLine2}".Trim())</h4>
+
+                    @{
+                        // fetch the role for the logged-in user (best-effort); show first role or "User"
+                        var manager = Context.RequestServices.GetService(typeof(UserManager<ApplicationUser>)) as UserManager<ApplicationUser>;
+                        string roleToShow = "User";
+                        try
+                        {
+                            var user = manager != null ? await manager.GetUserAsync(User) : null;
+                            if (user != null)
+                            {
+                                var userRoles = await manager.GetRolesAsync(user);
+                                roleToShow = userRoles.FirstOrDefault() ?? "User";
+                            }
+                        }
+                        catch
+                        {
+                            // ignore - fallback role remains "User"
+                        }
+                    }
+                    <div class="logged-role"><strong>@roleToShow</strong></div>
+                </div>
+
+                <nav class="mb-3">
+                    <a asp-controller="Bns" asp-action="Index" class='@IsActive("Index")'><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+                    <a asp-controller="Bns" asp-action="Households" class='@IsActive("Households")'><i class="bi bi-house-door me-2"></i> Households</a>
+                    <a asp-controller="Bns" asp-action="Residents" class='@IsActive("Residents")'><i class="bi bi-people-fill me-2"></i> Residents</a>
+                    <a asp-controller="Bns" asp-action="Reports" class='@IsActive("Reports")'><i class="bi bi-file-earmark-text me-2"></i> Reports</a>
+                    <a asp-controller="Bns" asp-action="Settings" class='@IsActive("Settings")'><i class="bi bi-gear me-2"></i> Settings</a>
+                </nav>
+            </div>
+
+            @* bottom area intentionally left empty above logout *@
+        </div>
+
+        <div class="logout-bottom">
+            <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post">
+                @Html.AntiForgeryToken()
+                <button type="button" id="logoutButton" class="logout-btn-white"><i class="bi bi-box-arrow-right"></i> Logout</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="main-content">
+        @RenderBody()
+    </div>
+
+    <!-- Logout modal -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Confirm Logout</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">Are you sure you want to logout?</div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="confirmLogout" class="btn btn-danger">Logout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+            var logoutBtn = document.getElementById('logoutButton');
+            var confirmBtn = document.getElementById('confirmLogout');
+            var logoutForm = document.getElementById('logoutForm');
+            var logoutModalEl = document.getElementById('logoutModal');
+            if (logoutBtn && logoutModalEl) {
+                var modal = new bootstrap.Modal(logoutModalEl);
+                logoutBtn.addEventListener('click', function () { modal.show(); });
+                confirmBtn && confirmBtn.addEventListener('click', function () { logoutForm.submit(); });
+            }
+        })();
+    </script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

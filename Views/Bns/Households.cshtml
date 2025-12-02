@@ -1,0 +1,160 @@
+﻿@using System
+@using System.Linq
+@using BarangayProject.Models.BhwModel
+@model IEnumerable<Household>
+
+@{
+    Layout = "~/Views/Shared/_BnsLayout.cshtml";
+    ViewData["Title"] = "Households";
+
+    var currentSearch = ViewBag.CurrentSearch as string ?? "";
+    var selectedSitioId = ViewBag.SelectedSitioId as string ?? "";
+    var sitios = ViewBag.Sitios as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+
+<div class="container-fluid py-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+        <br>
+            <h2 class="mb-1 fw-bold">Households</h2>
+        </div>
+
+        <!-- Filter / Search (no Add button) -->
+        <div class="d-flex gap-2">
+            <a asp-action="ArchivedHouseholds" class="btn btn-outline-secondary">View Archive</a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger mt-2">@TempData["ErrorMessage"]</div>
+    }
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success mt-2">@TempData["SuccessMessage"]</div>
+    }
+
+    <div class="row mb-3 mt-3">
+        <div class="col-md-8">
+            <form method="get" class="d-flex" id="householdsSearchForm" onsubmit="return false;">
+                <select id="sitioFilter" name="sitioId" class="form-select me-2" style="max-width:260px;">
+                    <option value="">All Sitios</option>
+
+                    @foreach (var s in sitios)
+                    {
+                        var id = Convert.ToString(s?.Id) ?? "";
+                        var name = Convert.ToString(s?.Name) ?? "";
+                        var sel = (id == selectedSitioId) ? " selected" : "";
+                        @Html.Raw($"<option value=\"{System.Net.WebUtility.HtmlEncode(id)}\"{sel}>{System.Net.WebUtility.HtmlEncode(name)}</option>")
+                    }
+                </select>
+
+                <input id="householdsSearchInput" name="search" value="@currentSearch" class="form-control me-2" placeholder="Type to search..." autocomplete="off" />
+                <button id="householdsSearchBtn" class="btn btn-primary me-2">Filter</button>
+                <a class="btn btn-outline-secondary" href="@Url.Action("Households", "Bns")">Clear</a>
+            </form>
+        </div>
+    </div>
+
+    <div class="card p-3 shadow-sm">
+        <div class="table-responsive">
+            <table id="householdsTable" class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:120px;">Household ID</th>
+                        <th style="width:260px;">Family Head</th>
+                        <th style="width:200px;">Sitio</th>
+                        <th style="width:160px;">Date Added</th>
+                        <th style="width:120px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var any = Model?.Any() ?? false;
+                        if (!any)
+                        {
+                            <tr class="no-results-placeholder">
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="no-results-box">No households found.</div>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var h in Model)
+                            {
+                                // prepare a safe sitio attribute string
+                                var sitioAttr = h.SitioId.HasValue
+                                    ? h.SitioId.Value.ToString()
+                                    : (h.Sitio != null ? Convert.ToString(h.Sitio.Id) : "");
+                                <tr data-familyhead="@h.FamilyHead" data-id="@h.Id" data-sitio="@sitioAttr">
+                                    <td class="text-mono small id-cell">@h.Id</td>
+                                    <td>@h.FamilyHead</td>
+                                    <td>
+                                        @(h.Sitio?.Name ?? (h.SitioId?.ToString() ?? "-"))
+                                    </td>
+                                    <td class="small text-muted">
+                                        @(h.CreatedAt == default(DateTime) ? "-" : h.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd"))
+                                    </td>
+                                    <td>
+                                        <!-- View only -->
+                                        <a asp-action="ViewHousehold" asp-route-id="@h.Id" class="btn btn-outline-primary btn-sm">View</a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace; }
+    .id-cell { color: #495057; }
+    #householdsTable td, #householdsTable th { padding-left: 14px !important; padding-right: 14px !important; }
+    #householdsTable td { font-size: 15px; }
+    #householdsTable th { font-size: 14px; font-weight: 600; text-transform: uppercase; }
+    .no-results-placeholder td { padding: 0 !important; background: transparent !important; }
+    .no-results-box { width: 100%; padding: 1.6rem 1rem; background: #f5f7fa; color: #6c757d; border-radius: 6px; font-size: 1rem; margin: 0 auto; }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        (function () {
+            const input = document.getElementById('householdsSearchInput');
+            const sitioSelect = document.getElementById('sitioFilter');
+
+            document.getElementById('householdsSearchBtn').addEventListener('click', function (e) {
+                e.preventDefault();
+                const url = new URL(window.location.href);
+                url.searchParams.set('search', input.value || '');
+                url.searchParams.set('sitioId', sitioSelect.value || '');
+                window.location.href = url.pathname + url.search;
+            });
+
+            input.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('householdsSearchBtn').click();
+                }
+            });
+
+            // optional: submit filter when sitio changed
+            sitioSelect.addEventListener('change', function () {
+                document.getElementById('householdsSearchBtn').click();
+            });
+
+            const succ = '@(TempData["SuccessMessage"] ?? "")';
+            const err = '@(TempData["ErrorMessage"] ?? "")';
+
+            if (succ.trim() !== '') Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: succ, timer: 2200, showConfirmButton: false });
+            if (err.trim() !== '') Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err, timer: 2800, showConfirmButton: false });
+        })();
+    </script>
+}

@@ -1,0 +1,148 @@
+﻿@using BarangayProject.Models.AdminModel
+@model IEnumerable<ManageUserVm>
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Manage Users";
+    var currentSearch = ViewBag.CurrentSearch as string ?? "";
+}
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+
+<div class="container-fluid py-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h2 class="mb-1 fw-bold">Manage Users</h2>
+        </div>
+        <div>
+            <a asp-action="AddUser" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Add User
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger mt-2">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="row mb-3 mt-3">
+        <div class="col-md-8">
+            <!-- removed onsubmit="return false;" so the form will submit normally to the controller -->
+            <form method="get" class="d-flex" id="usersSearchForm">
+                <input id="usersSearchInput" name="search" value="@currentSearch" class="form-control me-2" placeholder="Type to search..." autocomplete="off" />
+                <button id="usersSearchBtn" class="btn btn-primary me-2" type="submit">Search</button>
+                <a class="btn btn-outline-secondary" href="@Url.Action("ManageUsers", "Admin")">Clear</a>
+            </form>
+        </div>
+    </div>
+
+    <div class="card p-3 shadow-sm">
+        <div class="table-responsive">
+            <table id="usersTable" class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:120px">User Number</th>
+                        <th>Email</th>
+                        <th>Name</th>
+                        <th>Roles</th>
+                        <th>Joined</th>
+                        <th style="width:260px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var any = Model?.Any() ?? false;
+                        if (!any)
+                        {
+                            <tr class="no-results-placeholder">
+                                <td colspan="6" class="text-center text-muted py-4">No users found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            var idx = 1;
+                            foreach (var u in Model)
+                            {
+                                <tr data-email="@u.Email" data-name="@u.FullName" data-userid="@u.UserId">
+                                    <td class="text-mono small id-cell">@idx</td>
+                                    <td>@u.Email</td>
+                                    <td>@u.FullName</td>
+                                    <td><span class="badge bg-primary">@u.Role</span></td>
+                                    <td>
+                                        @if (u.Joined.HasValue)
+                                        {
+                                            @u.Joined.Value.ToLocalTime().ToString("yyyy-MM-dd")
+                                        }
+                                        else
+                                        {
+                                            <em>-</em>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a asp-action="EditUser" asp-route-id="@u.UserId" class="btn btn-outline-primary btn-sm me-1">Edit</a>
+
+                                        <!-- Plain server POST for toggle (no JS interception) -->
+                                        <form asp-action="ToggleDeactivate" method="post" class="d-inline me-1" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@u.UserId" />
+                                            @if (u.IsLockedOut)
+                                            {
+                                                <button type="submit" class="btn btn-success btn-sm">Activate</button>
+                                            }
+                                            else
+                                            {
+                                                <button type="submit" class="btn btn-danger btn-sm">Deactivate</button>
+                                            }
+                                        </form>
+                                    </td>
+                                </tr>
+                                idx++;
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace;
+    }
+
+    .id-cell {
+        color: #495057;
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        (function () {
+            // Toast from TempData (server-side)
+            const succ = '@(TempData["SuccessMessage"] ?? "")';
+            const err = '@(TempData["ErrorMessage"] ?? "")';
+            if (succ && succ.trim() !== '') {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: succ, showConfirmButton: false, timer: 2200 });
+            } else if (err && err.trim() !== '') {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err, showConfirmButton: false, timer: 2800 });
+            }
+
+            // No client-side live filtering — searches are performed server-side when the form is submitted.
+            // Keep script minimal; we ensure the search button is a submit and let Enter submit the form naturally.
+            const usersSearchForm = document.getElementById('usersSearchForm');
+            if (usersSearchForm) {
+                usersSearchForm.onsubmit = null; // defensive: ensure no JS prevents submission
+            }
+            const usersSearchBtn = document.getElementById('usersSearchBtn');
+            if (usersSearchBtn) {
+                usersSearchBtn.type = 'submit';
+            }
+
+            // No delete handlers here (delete UI removed).
+        })();
+    </script>
+}

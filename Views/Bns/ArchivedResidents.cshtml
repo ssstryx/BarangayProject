@@ -1,0 +1,73 @@
+﻿@model List<BarangayProject.Models.BhwModel.ResidentListVm>
+@{
+    Layout = "~/Views/Shared/_BnsLayout.cshtml";
+    ViewData["Title"] = "Archived Residents";
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h2 class="fw-bold mb-1">Archived Residents</h2>
+            <p class="text-muted mb-0">Viewing archived residents for your sitio (read-only).</p>
+        </div>
+        <div>
+            <a asp-controller="Bns" asp-action="Residents" class="btn btn-outline-secondary">Back to Residents</a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Resident ID</th>
+                            <th>Household ID</th>
+                            <th>Name</th>
+                            <th>Sex</th>
+                            <th>Occupation</th>
+                            <th>Education</th>
+                            <th>Date of Birth</th>
+                            <th>Age</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model == null || !Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-3">
+                                    No archived residents.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var r in Model)
+                            {
+                                <tr>
+                                    <td>@r.Id</td>
+                                    <td>@(r.HouseholdId?.ToString() ?? "-")</td>
+                                    <td>@r.Name</td>
+                                    <td>@r.Sex</td>
+                                    <td>@r.Occupation</td>
+                                    <td>@r.Education</td>
+                                    <td>@(r.DateOfBirth?.ToString("yyyy-MM-dd") ?? "-")</td>
+                                    <td>@(r.Age?.ToString() ?? "-")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

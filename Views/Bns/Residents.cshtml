@@ -1,0 +1,104 @@
+﻿@model List<BarangayProject.Models.BhwModel.ResidentListVm>
+@{
+    Layout = "~/Views/Shared/_BnsLayout.cshtml";
+    ViewData["Title"] = "Residents";
+    var q = ViewBag.SearchQuery as string ?? "";
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <br><br>
+            <h2 class="fw-bold mb-1">Residents</h2>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Url.Action("ArchivedResidents", "Bns")" class="btn btn-outline-secondary">View Archived</a>
+            <a href="@Url.Action("Households", "Bns")" class="btn btn-outline-secondary">Back</a>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    <form id="searchForm" method="get" class="row g-2 mb-3 align-items-center">
+
+        <!-- Search bar -->
+        <div class="col-md-6">
+            <input id="qInput" name="q" value="@q"
+                   class="form-control"
+                   placeholder="Type to search...." />
+        </div>
+
+        <!-- Search button -->
+        <div class="col-md-auto">
+            <button class="btn btn-primary px-4" type="submit">Search</button>
+        </div>
+
+        <!-- Clear button -->
+        <div class="col-md-auto">
+            <button id="clearBtn" type="button" class="btn btn-outline-secondary px-4">Clear</button>
+        </div>
+
+    </form>
+
+
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Resident ID</th>
+                            <th>Household ID</th>
+                            <th>Name</th>
+                            <th>Sex</th>
+                            <th>Occupation</th>
+                            <th>Education</th>
+                            <th>Date of Birth</th>
+                            <th>Age</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model == null || !Model.Any())
+                        {
+                            <tr><td colspan="9" class="text-center text-muted py-3">No residents found.</td></tr>
+                        }
+                        else
+                        {
+                            foreach (var r in Model)
+                            {
+                                <tr>
+                                    <td>@r.Id</td>
+                                    <td>@(r.HouseholdId?.ToString() ?? "-")</td>
+                                    <td>@r.Name</td>
+                                    <td>@r.Sex</td>
+                                    <td>@r.Occupation</td>
+                                    <td>@r.Education</td>
+                                    <td>@(r.DateOfBirth?.ToString("yyyy-MM-dd") ?? "-")</td>
+                                    <td>@(r.Age.HasValue? r.Age.Value.ToString() : "-")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('clearBtn')?.addEventListener('click', function () {
+            const q = document.getElementById('qInput');
+            if (q) q.value = '';
+            // submit empty search
+            document.getElementById('searchForm').submit();
+        });
+    </script>
+}
