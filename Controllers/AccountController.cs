@@ -11,6 +11,7 @@ using BarangayProject.Data;
 using BarangayProject.Models;
 using BarangayProject.Services;
 using BarangayProject.Models.AdminModel;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BarangayProject.Controllers
 {
@@ -85,6 +86,14 @@ namespace BarangayProject.Controllers
                 return View(model);
             }
 
+            // --- Prevent deactivated accounts from logging in ---
+            if (user.LockoutEnabled && user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow)
+            {
+                // use TempData so we redirect and render a fresh view (avoids circular layout rendering)
+                TempData["AccessDeniedMessage"] = "Your account has been deactivated. Please contact an administrator to reactivate your account.";
+                return RedirectToAction(nameof(AccessDenied));
+            }
+
             var result = await _signInManager.PasswordSignInAsync(
                 user.UserName,
                 model.Password,
@@ -127,6 +136,20 @@ namespace BarangayProject.Controllers
 
             ModelState.AddModelError(nameof(model.Password), "Incorrect email or password.");
             return View(model);
+        }
+
+        // -------------------------------
+        // AccessDenied (single method, uses TempData/ViewData)
+        // -------------------------------
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            // Prefer TempData (set before redirect), fall back to ViewData or default message
+            var message = TempData["AccessDeniedMessage"] as string
+                          ?? ViewData["AccessDeniedMessage"] as string
+                          ?? "You do not have access to this resource.";
+            ViewData["AccessDeniedMessage"] = message;
+            return View();
         }
 
         // -------------------------------
@@ -199,7 +222,6 @@ namespace BarangayProject.Controllers
             {
                 _logger.LogError(ex, "Error sending password reset email to {Email}", user.Email);
 #if DEBUG
-                // show debug link if available
                 TempData["InfoMessage"] = "A password reset link was generated (email send failed in DEBUG).";
 #else
                 TempData["InfoMessage"] = "If that email exists, a reset link has been generated.";
@@ -265,9 +287,8 @@ namespace BarangayProject.Controllers
         }
 
         // -------------------------------
-        // OTHER
+        // OTHER (leave Lockout view)
         // -------------------------------
-        public IActionResult AccessDenied() => View();
         public IActionResult Lockout() => View();
     }
 }

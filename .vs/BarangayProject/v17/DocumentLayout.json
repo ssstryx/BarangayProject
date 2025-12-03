@@ -3,16 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\controllers\\bnscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:controllers\\bnscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\.gitignore.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:.gitignore.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:controllers\\admincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\views\\account\\accessdenied.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:views\\account\\accessdenied.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\views\\shared\\_bnslayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:views\\shared\\_bnslayout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|c:\\users\\admin\\source\\repos\\barangayproject\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC39D31B-25C3-4F8E-AFD5-15D6C4FB7C5F}|BarangayProject.csproj|solutionrelative:controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,12 +22,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
@@ -35,40 +31,40 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "BnsController.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Controllers\\BnsController.cs",
-              "RelativeDocumentMoniker": "Controllers\\BnsController.cs",
-              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Controllers\\BnsController.cs",
-              "RelativeToolTip": "Controllers\\BnsController.cs",
-              "ViewState": "AgIAAPwBAAAAAAAAAAAQwDYCAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-02T15:51:13.813Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "_BnsLayout.cshtml",
-              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Shared\\_BnsLayout.cshtml",
-              "RelativeDocumentMoniker": "Views\\Shared\\_BnsLayout.cshtml",
-              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Shared\\_BnsLayout.cshtml",
-              "RelativeToolTip": "Views\\Shared\\_BnsLayout.cshtml",
-              "ViewState": "AgIAAB4AAAAAAAAAAAAAAHUBAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2025-12-02T15:34:50.409Z",
+              "Title": ".gitignore.txt",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\.gitignore.txt",
+              "RelativeDocumentMoniker": ".gitignore.txt",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\.gitignore.txt",
+              "RelativeToolTip": ".gitignore.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-12-03T14:56:13.887Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "AdminController.cs",
-              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Controllers\\AdminController.cs",
-              "RelativeDocumentMoniker": "Controllers\\AdminController.cs",
-              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Controllers\\AdminController.cs",
-              "RelativeToolTip": "Controllers\\AdminController.cs",
-              "ViewState": "AgIAAB8EAAAAAAAAAAAiwFkFAAAAAAAAAAAAAA==",
+              "Title": "AccessDenied.cshtml",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Account\\AccessDenied.cshtml",
+              "RelativeDocumentMoniker": "Views\\Account\\AccessDenied.cshtml",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Views\\Account\\AccessDenied.cshtml",
+              "RelativeToolTip": "Views\\Account\\AccessDenied.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABkAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-12-03T14:38:15.999Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Controllers\\AccountController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AccountController.cs",
+              "ToolTip": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\Controllers\\AccountController.cs",
+              "RelativeToolTip": "Controllers\\AccountController.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAAA0AAAApAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-12-02T14:35:35.011Z",
+              "WhenOpened": "2025-12-03T14:37:56.341Z",
               "EditorCaption": ""
             }
           ]

@@ -117,6 +117,7 @@ namespace BarangayProject.Controllers
         // -------------------- DASHBOARD --------------------
         public async Task<IActionResult> Index()
         {
+            // totals (exclude seeded system admin)
             var totalUsers = await _db.Users
                 .Where(u => u.Email != SystemAdminEmail)
                 .CountAsync();
@@ -128,87 +129,79 @@ namespace BarangayProject.Controllers
             var activeUsers = totalUsers - inactiveUsers;
             var totalSitios = await _db.Sitios.CountAsync();
 
-            var recentAuditEntities = await _db.AuditLogs
-                .OrderByDescending(a => a.EventTime)
-                .Take(40)
+            // --- Users by month (last 6 months inclusive of current month) ---
+            var nowUtc = DateTime.UtcNow;
+            var windowStart = new DateTime(nowUtc.Year, nowUtc.Month, 1).AddMonths(-5); // 6 months window start (first day)
+            var windowEndInclusive = new DateTime(nowUtc.Year, nowUtc.Month, 1).AddMonths(1).AddTicks(-1);
+
+            // Fetch created timestamps for users in the window (exclude system admin)
+            var createdList = await _db.Users
+                .Where(u => u.Email != SystemAdminEmail && u.CreatedAt != default && u.CreatedAt >= windowStart && u.CreatedAt <= windowEndInclusive)
+                .Select(u => u.CreatedAt)
                 .ToListAsync();
 
-            var referencedUserIds = recentAuditEntities
-                .Where(a => string.Equals(a.EntityType, "User", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(a.EntityId))
-                .Select(a => a.EntityId!)
-                .Distinct()
-                .ToList();
-
-            var referencedSitioIds = recentAuditEntities
-                .Where(a => string.Equals(a.EntityType, "Sitio", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(a.EntityId))
-                .Select(a => a.EntityId!)
-                .Distinct()
-                .ToList();
-
-            var userProfilesMap = new Dictionary<string, (int? UserNumber, string DisplayName)>();
-            if (referencedUserIds.Any())
+            var usersByMonth = new List<(string Month, int Count)>();
+            for (int i = 0; i < 6; i++)
             {
-                var users = await _db.Users
-                    .Include(u => u.Profile)
-                    .Where(u => referencedUserIds.Contains(u.Id))
+                var month = windowStart.AddMonths(i);
+                var label = month.ToString("MMM yyyy");
+                var count = createdList.Count(dt => dt.Year == month.Year && dt.Month == month.Month);
+                usersByMonth.Add((label, count));
+            }
+
+            // --- Sitios assignment (Assigned / Unassigned) ---
+            var assignedCount = await _db.Sitios.CountAsync(s => s.SitioBhws.Any());
+            var unassignedCount = Math.Max(0, totalSitios - assignedCount);
+
+            var sitiosByAssignment = new List<(string Label, int Count)>
+    {
+        ("Assigned", assignedCount),
+        ("Unassigned", unassignedCount)
+    };
+
+            // --- Users by Role (count non-system-admin users per role) ---
+            var roles = await _db.Roles.OrderBy(r => r.Name).ToListAsync();
+            var roleCounts = new List<(string Role, int Count)>();
+
+            if (roles.Any())
+            {
+                // get user-role pairs joined to users (exclude system admin email)
+                var userRolePairs = await _db.UserRoles
+                    .Join(_db.Users,
+                          ur => ur.UserId,
+                          u => u.Id,
+                          (ur, u) => new { ur.UserId, ur.RoleId, u.Email })
+                    .Where(x => x.Email != SystemAdminEmail)
                     .ToListAsync();
 
-                foreach (var u in users)
-                {
-                    int? userNumber = u.Profile?.UserNumber;
-                    string display = u.Profile != null
-                        ? ((u.Profile.FirstName ?? "") + " " + (u.Profile.LastName ?? "")).Trim()
-                        : (u.DisplayName ?? u.Email ?? u.UserName ?? u.Id);
+                var countsByRoleId = userRolePairs
+                    .GroupBy(x => x.RoleId)
+                    .ToDictionary(g => g.Key, g => g.Select(x => x.UserId).Distinct().Count());
 
-                    userProfilesMap[u.Id] = (userNumber, display);
+                foreach (var r in roles)
+                {
+                    countsByRoleId.TryGetValue(r.Id, out var c);
+                    roleCounts.Add((r.Name ?? "-", c));
                 }
             }
 
-            var sitioMap = new Dictionary<string, Sitio>();
-            if (referencedSitioIds.Any())
-            {
-                var numericIds = referencedSitioIds
-                    .Where(s => int.TryParse(s, out _))
-                    .Select(int.Parse)
-                    .ToList();
-
-                if (numericIds.Any())
-                {
-                    var sitios = await _db.Sitios.Where(s => numericIds.Contains(s.Id)).ToListAsync();
-                    foreach (var s in sitios) sitioMap[s.Id.ToString()] = s;
-                }
-
-                var remaining = referencedSitioIds.Except(sitioMap.Keys).ToList();
-                if (remaining.Any())
-                {
-                    var found = await _db.Sitios.Where(s => remaining.Contains(s.Id.ToString())).ToListAsync();
-                    foreach (var s in found) sitioMap[s.Id.ToString()] = s;
-                }
-            }
-
-            var dedup = recentAuditEntities
-                .GroupBy(a => new { a.Action, a.Details })
-                .Select(g => g.OrderByDescending(x => x.EventTime).First())
-                .OrderByDescending(x => x.EventTime)
-                .Take(10)
-                .ToList();
-
-            var recentAudits = dedup
-                .Select(a => new DashboardViewModel { Timestamp = a.EventTime, Description = MapAuditToFriendlyText(a, userProfilesMap, sitioMap) })
-                .OrderByDescending(x => x.Timestamp)
-                .ToList();
-
-            var model = new DashboardViewModel
+            // build VM
+            var vm = new DashboardViewModel
             {
                 TotalUsers = totalUsers,
                 ActiveUsers = activeUsers,
                 InactiveUsers = inactiveUsers,
                 TotalSitios = totalSitios,
-                RecentActivities = recentAudits
+
+                UsersByMonth = usersByMonth,
+                SitiosByAssignment = sitiosByAssignment,
+                RolesByCount = roleCounts
             };
 
-            return View(model);
+            return View(vm);
         }
+
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -257,22 +250,6 @@ namespace BarangayProject.Controllers
 
             TempData["SuccessMessage"] = isLocked ? "User activated." : "User deactivated.";
             return RedirectToAction(nameof(ManageUsers));
-        }
-
-        // -------------------- Clear Recent Activity --------------------
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ClearRecentActivity()
-        {
-            var logs = await _db.AuditLogs.ToListAsync();
-            if (logs.Any())
-            {
-                _db.AuditLogs.RemoveRange(logs);
-                await _db.SaveChangesAsync();
-            }
-
-            TempData["SuccessMessage"] = "Recent activity cleared.";
-            return RedirectToAction(nameof(Index));
         }
 
         // -------------------- MANAGE USERS --------------------
@@ -379,6 +356,66 @@ namespace BarangayProject.Controllers
                 ViewBag.Roles = await _role_manager_getnames();
                 return View(model);
             }
+
+            // ... after createRes.Succeeded
+            // ensure account is unconfirmed and locked until email confirmation
+            user.EmailConfirmed = false; // usually default, but set explicitly
+            user.LockoutEnabled = true;
+            user.LockoutEnd = DateTimeOffset.UtcNow.AddYears(100); // effectively locked until confirmed
+            await _userManager.UpdateAsync(user);
+
+            // add role (unchanged)
+            if (!string.IsNullOrWhiteSpace(model.Role))
+            {
+                var roleOk = await _roleManager.RoleExistsAsync(model.Role);
+                if (roleOk)
+                {
+                    await _userManager.AddToRoleAsync(user, model.Role);
+                }
+            }
+
+            // create profile row if you have UserProfile entity
+            try
+            {
+                var profile = new UserProfile
+                {
+                    UserId = user.Id,
+                    FirstName = model.FirstName ?? "",
+                    MiddleName = model.MiddleName,
+                    LastName = model.LastName ?? "",
+                    CreatedAt = DateTime.UtcNow
+                };
+                _db.UserProfiles.Add(profile);
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Failed to create profile row for new user (non-fatal).");
+            }
+
+            // send confirmation email so the user can verify from any device
+            try
+            {
+                await SendConfirmationEmailAsync(user);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send confirmation email to new user {Email}", user.Email);
+                // Decide whether to treat this as fatal. We'll show warning but still keep user created/locked.
+                TempData["WarningMessage"] = "User created but verification email failed to send. Please check SMTP settings.";
+            }
+
+            await _auditService.AddAsync(
+                action: "CreateUser",
+                details: $"Created user {GetFriendlyUserLabel(user)} (email verification required)",
+                performedByUserId: _userManager.GetUserId(User),
+                entityType: "User",
+                entityId: user.Id);
+
+            // show helpful message: created + email sent (or warning)
+            TempData["SuccessMessage"] = "User created. A verification email was sent; the user must confirm email before signing in.";
+            return RedirectToAction(nameof(ManageUsers));
+
 
             // add role
             if (!string.IsNullOrWhiteSpace(model.Role))
@@ -1047,8 +1084,6 @@ namespace BarangayProject.Controllers
                 .Take(20)
                 .ToList();
 
-            vm.RecentActivities = dedup.Select(a => new DashboardViewModel { Timestamp = a.EventTime, Description = MapAuditToFriendlyText(a, userProfilesMap, sitioMap) }).OrderByDescending(x => x.Timestamp).ToList();
-
             var now = DateTime.UtcNow;
             var from = now.AddMonths(-5);
 
@@ -1077,11 +1112,6 @@ namespace BarangayProject.Controllers
         }
 
         // -------------------- New reporting endpoints (JSON + Exports) --------------------
-
-        /// <summary>
-        /// Returns report data as JSON: { columns:[], rows:[] }
-        /// Accepts querystring: reportType (users|sitios), startDate (yyyy-MM-dd), endDate (yyyy-MM-dd)
-        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetReportData(string reportType = "users", string? startDate = null, string? endDate = null)
         {
@@ -1161,14 +1191,6 @@ namespace BarangayProject.Controllers
             }
         }
 
-        /// <summary>
-        /// Centralized data builder for supported reports.
-        /// Returns columns and rows (list of dictionaries keyed by column header).
-        /// </summary>
-        /// <summary>
-        /// Centralized data builder for supported reports.
-        /// Returns columns and rows (list of dictionaries keyed by column header).
-        /// </summary>
         private async Task<(List<string> columns, List<Dictionary<string, object>> rows)> BuildReportData(string reportType, DateTime? fromUtc, DateTime? toUtc)
         {
             reportType = (reportType ?? "users").Trim().ToLowerInvariant();
@@ -1227,39 +1249,8 @@ namespace BarangayProject.Controllers
                     .GroupBy(sb => sb.BhwId)
                     .ToDictionary(g => g.Key!, g => g.Select(x => x.SitioId).FirstOrDefault());
 
-                // preload profiles for the users in this resultset
-                var userIds = users.Select(u => u.Id).Where(id => !string.IsNullOrWhiteSpace(id)).ToList();
-                var profileMap = new Dictionary<string, UserProfile>();
-                if (userIds.Any())
-                {
-                    var profiles = await _db.UserProfiles.Where(p => userIds.Contains(p.UserId)).ToListAsync();
-                    profileMap = profiles.Where(p => !string.IsNullOrWhiteSpace(p.UserId)).ToDictionary(p => p.UserId!, p => p);
-                }
-
-                // helper to safely extract a numeric user number from a profile instance (handles int, int?, string)
-                int? ExtractUserNumberFromProfile(UserProfile? prof)
-                {
-                    if (prof == null) return null;
-                    try
-                    {
-                        var t = prof.GetType();
-                        var prop = t.GetProperty("UserNumber", BindingFlags.Public | BindingFlags.Instance);
-                        if (prop == null) return null;
-                        var raw = prop.GetValue(prof);
-                        if (raw == null) return null;
-
-                        if (raw is int i) return i == 0 ? null : (int?)i;
-                        if (raw is long l) return l == 0 ? null : (int?)Convert.ToInt32(l);
-                        if (raw is int?) { var vi = (int?)raw; return vi.HasValue && vi.Value != 0 ? vi : null; }
-                        var s = raw.ToString();
-                        if (int.TryParse(s, out var parsed) && parsed != 0) return parsed;
-                    }
-                    catch
-                    {
-                        // ignore parse errors
-                    }
-                    return null;
-                }
+                // counter to match Manage Users numbering (1,2,3...)
+                int counter = 1;
 
                 foreach (var u in users)
                 {
@@ -1281,55 +1272,26 @@ namespace BarangayProject.Controllers
                         fullName = u.DisplayName ?? u.UserName ?? "";
                     }
 
-                    // user number: use profile.UserNumber when present (matches ManageUsers). Do NOT show GUID fallback.
-                    string userNumberText = "";
-                    int? userNum = null;
-
-                    // prefer the included Profile (u.Profile) because it's already loaded
-                    userNum = ExtractUserNumberFromProfile(u.Profile) ?? (profileMap.TryGetValue(u.Id ?? "", out var p2) ? ExtractUserNumberFromProfile(p2) : null);
-
-                    if (userNum.HasValue)
-                        userNumberText = userNum.Value.ToString();
-
                     // sitio: try Profile.SitioId first; if missing, try SitioBhws join for BHWs
                     string sitioName = "";
-                    // prefer u.Profile if it exists
                     if (u.Profile != null)
                     {
-                        // read SitioId property reflectively in case schema differs
-                        var prop = u.Profile.GetType().GetProperty("SitioId", BindingFlags.Public | BindingFlags.Instance);
+                        int? sitioId = null;
+                        var prop = u.Profile.GetType().GetProperty("SitioId");
                         if (prop != null)
                         {
                             var raw = prop.GetValue(u.Profile);
-                            if (raw != null)
+                            if (raw is int i) sitioId = i;
+                            else
                             {
-                                try
-                                {
-                                    var sid = Convert.ToInt32(raw);
-                                    if (sid != 0 && sitiosDict.TryGetValue(sid, out var sn))
-                                        sitioName = sn ?? "";
-                                }
-                                catch { /* ignore */ }
+                                try { sitioId = Convert.ToInt32(raw); } catch { sitioId = null; }
                             }
                         }
-                    }
-                    // fallback: check profileMap (preloaded)
-                    if (string.IsNullOrWhiteSpace(sitioName) && profileMap.TryGetValue(u.Id ?? "", out var profFromMap) && profFromMap != null)
-                    {
-                        var prop = profFromMap.GetType().GetProperty("SitioId", BindingFlags.Public | BindingFlags.Instance);
-                        if (prop != null)
+
+                        if (sitioId.HasValue && sitioId.Value != 0)
                         {
-                            var raw = prop.GetValue(profFromMap);
-                            if (raw != null)
-                            {
-                                try
-                                {
-                                    var sid = Convert.ToInt32(raw);
-                                    if (sid != 0 && sitiosDict.TryGetValue(sid, out var sn))
-                                        sitioName = sn ?? "";
-                                }
-                                catch { /* ignore */ }
-                            }
+                            sitiosDict.TryGetValue(sitioId.Value, out sitioName);
+                            sitioName ??= "";
                         }
                     }
 
@@ -1348,7 +1310,8 @@ namespace BarangayProject.Controllers
 
                     var dict = new Dictionary<string, object>
                     {
-                        ["User Number"] = userNumberText,
+                        // Use generated counter so it matches Manage Users
+                        ["User Number"] = counter,
                         ["Full Name"] = fullName,
                         ["Role"] = role,
                         ["Sitio"] = sitioName,
@@ -1356,13 +1319,15 @@ namespace BarangayProject.Controllers
                         ["Status"] = status,
 
                         // legacy keys for compatibility
-                        ["User Id"] = userNumberText,
+                        ["User Id"] = u.Id ?? "",
                         ["SitioName"] = sitioName
                     };
 
                     rows.Add(dict);
+                    counter++;
                 }
-                var debugProfiles = await _db.UserProfiles.ToListAsync();
+            }
+            var debugProfiles = await _db.UserProfiles.ToListAsync();
                 foreach (var p in debugProfiles)
                 {
                     Console.WriteLine($"PROFILE: UserId={p.UserId}, UserNumber={p.UserNumber}, SitioId={p.SitioId}");
@@ -1370,8 +1335,8 @@ namespace BarangayProject.Controllers
 
 
                 return (columns, rows);
-            }
         }
+        
 
         private static DateTime? TryParseDate(string? raw)
         {
@@ -1996,6 +1961,11 @@ namespace BarangayProject.Controllers
                 var result = await _userManager.ConfirmEmailAsync(user, token);
                 if (result.Succeeded)
                 {
+                    // remove lockout so the newly-confirmed user can sign in
+                    user.LockoutEnd = null;
+                    user.LockoutEnabled = false;
+                    await _userManager.UpdateAsync(user);
+
                     await _auditService.AddAsync(
                         action: "ConfirmEmail",
                         details: $"Email confirmed for user {GetFriendlyUserLabel(user)}",
@@ -2003,9 +1973,10 @@ namespace BarangayProject.Controllers
                         entityType: "User",
                         entityId: user.Id);
 
-                    TempData["SuccessMessage"] = "Email address confirmed. You may now use admin features.";
+                    TempData["SuccessMessage"] = "Email address confirmed. You may now log in.";
                     return RedirectToAction(nameof(Index));
                 }
+
                 else
                 {
                     var errors = string.Join(" | ", result.Errors.Select(e => e.Description));

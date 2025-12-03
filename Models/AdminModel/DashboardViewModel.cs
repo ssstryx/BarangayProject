@@ -1,24 +1,18 @@
-﻿
-
-namespace BarangayProject.Models.AdminModel
+﻿public class DashboardViewModel
 {
-    public class DashboardViewModel
-    {
-        public int TotalUsers { get; set; }
-        public int ActiveUsers { get; set; }
-        public int InactiveUsers { get; set; }
-        public int TotalSitios { get; set; }
+    public int TotalUsers { get; set; }
+    public int ActiveUsers { get; set; }
+    public int InactiveUsers { get; set; }
+    public int TotalSitios { get; set; }
 
-        public DateTime Timestamp { get; set; }
-        public string Action { get; set; } = "";
-        // keep both names so older code still compiles
-        public string Details { get; set; } = "";
-        public string Description
-        {
-            get => string.IsNullOrWhiteSpace(Details) ? "" : Details;
-            set => Details = value ?? "";
-        }
+    // Chart #1 – Users over last 6 months
+    public List<(string Month, int Count)> UsersByMonth { get; set; } = new();
 
-        public List<DashboardViewModel> RecentActivities { get; set; } = new();
-    }
+    // Chart #2 – Sitio assignment
+    public List<(string Label, int Count)> SitiosByAssignment { get; set; } = new();
+
+    // Chart #3 – Users by role
+    public List<(string Role, int Count)> RolesByCount { get; set; } = new();
+
+
 }

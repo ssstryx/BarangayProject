@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BarangayProject")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5caebd738d41991b196dbcfe6bb66f78e6088b0c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f682268d29052d31ac1058e1462083717328d12f")]
 [assembly: System.Reflection.AssemblyProductAttribute("BarangayProject")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BarangayProject")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

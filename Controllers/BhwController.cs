@@ -196,128 +196,6 @@ namespace BarangayProject.Controllers
             }
         }
 
-        #region Audit mapping for BHW dashboard
-        private static string MapBhwAuditToText(AuditLog a)
-        {
-            var action = a?.Action ?? "";
-            var details = a?.Details ?? "";
-
-            if (action.Contains("Create", StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(a.EntityType, "Household", StringComparison.OrdinalIgnoreCase))
-                return $"Added household — {details}";
-
-            if (action.Contains("Edit", StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(a.EntityType, "Household", StringComparison.OrdinalIgnoreCase))
-                return $"Edited household — {details}";
-
-            if (action.Contains("Archive", StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(a.EntityType, "Household", StringComparison.OrdinalIgnoreCase))
-                return $"Archived household — {details}";
-
-            if (action.Contains("Restore", StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(a.EntityType, "Household", StringComparison.OrdinalIgnoreCase))
-                return $"Restored household — {details}";
-
-            if (string.Equals(a.EntityType, "Resident", StringComparison.OrdinalIgnoreCase))
-            {
-                if (action.Contains("Create", StringComparison.OrdinalIgnoreCase))
-                    return $"Added resident — {details}";
-                if (action.Contains("Edit", StringComparison.OrdinalIgnoreCase))
-                    return $"Updated resident — {details}";
-                if (action.Contains("Delete", StringComparison.OrdinalIgnoreCase))
-                    return $"Removed resident — {details}";
-            }
-
-            if (string.Equals(a.EntityType, "Sitio", StringComparison.OrdinalIgnoreCase) &&
-                (action.Contains("Assign", StringComparison.OrdinalIgnoreCase) || action.Contains("Update", StringComparison.OrdinalIgnoreCase)))
-            {
-                return $"Updated sitio — {details}";
-            }
-
-            var lower = action.ToLowerInvariant();
-            if (lower.Contains("user") || lower.Contains("role") || lower.Contains("activate") || lower.Contains("deactivate") || lower.Contains("password"))
-            {
-                return "";
-            }
-
-            return $"{action} {details}".Trim();
-        }
-        #endregion
-
-        // Helper that returns a safe DateTime for ordering audit rows
-        private static DateTime GetSafeTimestampFromAudit(object auditObj)
-        {
-            if (auditObj == null) return DateTime.UtcNow;
-
-            try
-            {
-                var t = auditObj.GetType();
-
-                // prefer EventTime if present
-                var evProp = t.GetProperty("EventTime", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-                if (evProp != null)
-                {
-                    var evVal = evProp.GetValue(auditObj);
-                    // when boxed, both DateTime and non-null DateTime? become a boxed DateTime
-                    if (evVal is DateTime dt && dt != default(DateTime)) return dt;
-                }
-
-                // try CreatedAt / CreatedOn / DateCreated
-                var createdProp = t.GetProperty("CreatedAt", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-                                  ?? t.GetProperty("CreatedOn", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-                                  ?? t.GetProperty("DateCreated", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-
-                if (createdProp != null)
-                {
-                    var cVal = createdProp.GetValue(auditObj);
-                    if (cVal is DateTime cdt && cdt != default(DateTime)) return cdt;
-                }
-            }
-            catch
-            {
-                // ignore reflection errors
-            }
-
-            return DateTime.UtcNow;
-        }
-
-        // original relevance heuristic (kept as helper)
-        private static bool IsRelevantAudit(AuditLog a)
-        {
-            if (a == null) return false;
-            var et = (a.EntityType ?? "").ToLowerInvariant();
-            var action = (a.Action ?? "").ToLowerInvariant();
-            var details = (a.Details ?? "").ToLowerInvariant();
-
-            // Exclude admin/user management entries explicitly
-            if (action.Contains("user") || action.Contains("role") || action.Contains("password") ||
-                action.Contains("activate") || action.Contains("deactivate") || details.Contains("user") || details.Contains("role"))
-                return false;
-
-            // Allowed entity types / keywords for BHW dashboard (case-insensitive)
-            var allowedEntities = new[] { "household", "resident", "sitio", "sitiobhw", "householdhealth", "householdsanitation" };
-            var allowedActions = new[] { "create", "edit", "update", "archive", "restore", "assign", "delete" };
-
-            // If entity type is known and allowed -> include
-            if (!string.IsNullOrWhiteSpace(et))
-            {
-                foreach (var e in allowedEntities)
-                    if (et.Contains(e)) return true;
-            }
-
-            // Otherwise include when action contains relevant keywords AND entity/details mention household/resident/sitio
-            foreach (var kw in allowedActions)
-            {
-                if (action.Contains(kw) || details.Contains(kw))
-                {
-                    if (details.Contains("household") || details.Contains("resident") || details.Contains("sitio"))
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
         private async Task<BhwDashboardVm> BuildDashboardVmAsync()
         {
             var sitio = await GetAssignedSitioAsync();
@@ -339,6 +217,7 @@ namespace BarangayProject.Controllers
 
             var residentQuery = from r in _db.Residents.AsNoTracking()
                                 join h in householdQuery on r.HouseholdId equals h.Id
+                                where (r.IsArchived == null || r.IsArchived == false)
                                 select r;
 
             var totalPopulation = await residentQuery.CountAsync();
@@ -381,108 +260,7 @@ namespace BarangayProject.Controllers
                 catch { /* ignore */ }
             }
 
-            // recent activity (BHW-focused)
-            var recentActivities = new List<DashboardViewModel>();
-            try
-            {
-                // Materialize audit rows to avoid EF translation issues
-                var auditRows = await _db.AuditLogs.AsNoTracking().ToListAsync();
-
-                var userId = _userManager.GetUserId(User);
-                int? assignedSitioId = sitio?.Id;
-                var assignedSitioNameLower = sitio?.Name?.ToLowerInvariant();
-
-                // Prepare admin-exclusion lists (targeted)
-                var adminEntityNames = new[] { "sitio", "sitiobhw", "bhw", "user", "role" };
-                var adminActionMarkers = new[] { "createsitio", "deletesitio", "assignbhw", "updatesitio", "createsitiobhw", "deletesitiobhw" };
-
-                var top = auditRows.Where(a =>
-                {
-                    if (a == null) return false;
-
-                    var actionLower = (a.Action ?? "").ToLowerInvariant();
-                    var entityLower = (a.EntityType ?? "").ToLowerInvariant();
-                    var detailsLower = (a.Details ?? "").ToLowerInvariant();
-
-                    // 1) HARD exclude admin/site management events (targeted)
-                    // Exclude rows that are explicitly about Sitio management or user/role administration
-                    if (!string.IsNullOrWhiteSpace(entityLower) && adminEntityNames.Any(e => entityLower.Contains(e)))
-                    {
-                        // If the entity is "household" or "resident" we keep; only drop Sitio/user/role admin entries
-                        if (entityLower.Contains("sitio") || entityLower.Contains("user") || entityLower.Contains("role") || entityLower.Contains("bhw"))
-                            return false;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(actionLower) && adminActionMarkers.Any(m => actionLower.Contains(m)))
-                        return false;
-
-                    // 2) include if audit was performed by this BHW (UserId match)
-                    if (!string.IsNullOrWhiteSpace(a.UserId) && !string.IsNullOrWhiteSpace(userId) && a.UserId == userId)
-                        return true;
-
-                    // 3) include if audit references assigned sitio id via EntityId (when EntityType refers to Sitio or mapping)
-                    if (!string.IsNullOrWhiteSpace(a.EntityId) && assignedSitioId.HasValue)
-                    {
-                        if (int.TryParse(a.EntityId, out var parsedId) && parsedId == assignedSitioId.Value)
-                            return true;
-                    }
-
-                    // 4) include when EntityType explicitly is a household/resident/health/sanitation entity
-                    if (!string.IsNullOrWhiteSpace(entityLower))
-                    {
-                        if (entityLower.Contains("household") || entityLower.Contains("resident") || entityLower.Contains("householdhealth") || entityLower.Contains("householdsanitation"))
-                            return true;
-                    }
-
-                    // 5) include if details mention the assigned sitio name (fallback)
-                    if (!string.IsNullOrWhiteSpace(assignedSitioNameLower) && !string.IsNullOrWhiteSpace(detailsLower))
-                    {
-                        if (detailsLower.Contains(assignedSitioNameLower))
-                            return true;
-                    }
-
-                    // 6) final fallback: use original heuristic (action/details mention household/resident/sitio keywords)
-                    return IsRelevantAudit(a);
-                })
-                .OrderByDescending(a => a.EventTime != default ? a.EventTime : a.CreatedAt)
-                .Take(30)
-                .ToList();
-
-                foreach (var a in top)
-                {
-                    try
-                    {
-                        var ts = a.EventTime != default(DateTime) ? a.EventTime : a.CreatedAt;
-
-                        // map to friendly text; MapBhwAuditToText already returns "" for admin/usermanagement entries
-                        var mapped = MapBhwAuditToText(a);
-                        var rawDetails = a.Details ?? "";
-                        var fallback = $"{(a.Action ?? "")} {rawDetails}".Trim();
-                        var detailsToShow = !string.IsNullOrWhiteSpace(mapped) ? mapped : fallback;
-
-                        // if mapping returns empty, skip (safeguard)
-                        if (string.IsNullOrWhiteSpace(detailsToShow)) continue;
-
-                        recentActivities.Add(new DashboardViewModel
-                        {
-                            Timestamp = ts,
-                            Action = a.Action ?? "",
-                            Details = detailsToShow
-                        });
-                    }
-                    catch (Exception exRow)
-                    {
-                        _logger.LogWarning(exRow, "BuildDashboardVmAsync: failed processing an audit row for display.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "BuildDashboardVmAsync: failed while loading recent activities.");
-                recentActivities = recentActivities ?? new List<DashboardViewModel>();
-            }
-
-
+            // Build trend (last 6 months)
             var trendLabels = new List<string>();
             var trendValues = new List<int>();
 
@@ -542,7 +320,6 @@ namespace BarangayProject.Controllers
                 TotalHouseholds = totalHouseholds,
                 TotalFemale = femaleCount,
                 TotalMale = maleCount,
-                RecentActivities = recentActivities,
                 TrendLabels = trendLabels,
                 TrendValues = trendValues
             };
@@ -551,7 +328,6 @@ namespace BarangayProject.Controllers
             ViewBag.TotalHouseholds = vm.TotalHouseholds;
             ViewBag.TotalFemale = vm.TotalFemale;
             ViewBag.TotalMale = vm.TotalMale;
-            ViewBag.RecentActivities = recentActivities;
 
             return vm;
         }
@@ -564,8 +340,7 @@ namespace BarangayProject.Controllers
             return View(vm);
         }
 
-        // GET: list only non-archived households for this BHW's sitio
-        public async Task<IActionResult> Households()
+        public async Task<IActionResult> Households(string q = null)
         {
             var sitio = await GetAssignedSitioAsync();
             if (sitio != null)
@@ -582,16 +357,43 @@ namespace BarangayProject.Controllers
             IQueryable<Household> query = _db.Households
                                              .AsNoTracking()
                                              .Include(h => h.Sitio)
-                                             .Where(h => (h.IsArchived == null || h.IsArchived == false));
+                                             .Include(h => h.Residents)
+                                             .Where(h => h.IsArchived == null || h.IsArchived == false);
 
             if (sitio != null)
-            {
                 query = query.Where(h => h.SitioId == sitio.Id);
+
+            // SEARCH FILTER
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var term = q.Trim().ToLowerInvariant();
+                int idSearch;
+
+                query = query.Where(h =>
+                    // ID search
+                    (int.TryParse(term, out idSearch) && h.Id == idSearch)
+
+                    // Family head
+                    || (h.FamilyHead != null && h.FamilyHead.ToLower().Contains(term))
+
+                    // Sitio name
+                    || (h.Sitio != null && h.Sitio.Name.ToLower().Contains(term))
+
+                    // Resident names
+                    || h.Residents.Any(r =>
+                           (r.FirstName != null && r.FirstName.ToLower().Contains(term))
+                        || (r.MiddleName != null && r.MiddleName.ToLower().Contains(term))
+                        || (r.LastName != null && r.LastName.ToLower().Contains(term))
+                    )
+                );
             }
+
+            ViewBag.SearchQuery = q ?? "";
 
             var list = await query.OrderBy(h => h.Id).ToListAsync();
             return View(list);
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -830,7 +632,7 @@ namespace BarangayProject.Controllers
                             HouseholdId = household.Id,
                             Role = "Child",
                             FirstName = c.FirstName?.Trim() ?? "",
-                            MiddleName = c.MiddleName?.Trim() ?? "",
+                            MiddleName = c.MiddleName?.Trim(),
                             LastName = c.LastName?.Trim() ?? "",
                             Extension = c.Extension,
                             DateOfBirth = c.DateOfBirth,

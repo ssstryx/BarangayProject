@@ -110,7 +110,7 @@
             </div>
         </div>
 
-        <!-- GENDER DISTRIBUTION -->
+        <!-- GENDER DISTRIBUTION (made to match BHW look) -->
         <div class="col-md-4">
             <div class="card shadow-sm border-0 p-4">
 
@@ -159,6 +159,11 @@
         const canvas = document.getElementById('popTrend');
         if (!canvas) return;
 
+        // make canvas match parent size (same approach as BHW)
+        const parent = canvas.parentElement.getBoundingClientRect();
+        canvas.width = parent.width;
+        canvas.height = parent.height - 20;
+
         const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(trendLabels));
         const values = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(trendValues));
 
@@ -176,7 +181,9 @@
                 }]
             },
             options: {
-                responsive: true,
+                responsive: false,
+                animation: false,
+                layout: { padding: { bottom: 20 } },
                 plugins: { legend: { display: false } },
                 scales: {
                     x: { grid: { display: false } },

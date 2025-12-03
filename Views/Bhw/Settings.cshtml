@@ -6,7 +6,7 @@
 
 <div class="container-fluid py-4">
     <div class="d-flex align-items-center justify-content-between mb-3">
-        <h1 class="page-title mb-0">Settings</h1>
+        <h2 class="fw-bold mb-2">Settings</h2>
     </div>
 
     @if (TempData["SuccessMessage"] != null)
@@ -21,13 +21,13 @@
     <div class="card mb-4">
         <div class="card-header"><strong>Change Password</strong></div>
         <div class="card-body">
-            <form asp-action="Settings" method="post" novalidate>
+            <form asp-action="Settings" method="post" novalidate id="bhwSettingsForm">
                 @Html.AntiForgeryToken()
 
                 <div class="mb-3">
                     <label asp-for="CurrentPassword" class="form-label"></label>
                     <div class="input-with-icon">
-                        <input asp-for="CurrentPassword" class="form-control" />
+                        <input asp-for="CurrentPassword" id="currentPassword" name="CurrentPassword" type="password" class="form-control" autocomplete="current-password" />
                         <button type="button" class="btn-eye" id="toggleCurrent"><i class="bi bi-eye"></i></button>
                     </div>
                     <span asp-validation-for="CurrentPassword" class="text-danger small"></span>
@@ -36,7 +36,7 @@
                 <div class="mb-3">
                     <label asp-for="NewPassword" class="form-label"></label>
                     <div class="input-with-icon">
-                        <input asp-for="NewPassword" class="form-control" />
+                        <input asp-for="NewPassword" id="newPassword" name="NewPassword" type="password" class="form-control pw-input" autocomplete="new-password" />
                         <button type="button" class="btn-eye" id="toggleNew"><i class="bi bi-eye"></i></button>
                     </div>
                     <span asp-validation-for="NewPassword" class="text-danger small"></span>
@@ -45,56 +45,199 @@
                 <div class="mb-3">
                     <label asp-for="ConfirmPassword" class="form-label"></label>
                     <div class="input-with-icon">
-                        <input asp-for="ConfirmPassword" class="form-control" />
+                        <input asp-for="ConfirmPassword" id="confirmPassword" name="ConfirmPassword" type="password" class="form-control pw-input" autocomplete="new-password" />
                         <button type="button" class="btn-eye" id="toggleConfirm"><i class="bi bi-eye"></i></button>
                     </div>
                     <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
                 </div>
 
+                <div class="mb-3">
+                    <div id="pwHints" class="pw-hints-vertical mt-2">
+                        <div class="pw-hint"><span class="hint-dot" id="h-length"></span><span class="hint-text">Minimum <strong id="hint-length-value">8</strong> characters</span></div>
+                        <div class="pw-hint"><span class="hint-dot" id="h-upper"></span><span class="hint-text">One uppercase character</span></div>
+                        <div class="pw-hint"><span class="hint-dot" id="h-lower"></span><span class="hint-text">One lowercase character</span></div>
+                        <div class="pw-hint"><span class="hint-dot" id="h-number"></span><span class="hint-text">One number</span></div>
+                        <div class="pw-hint"><span class="hint-dot" id="h-special"></span><span class="hint-text">One special character</span></div>
+                    </div>
+                    <div id="pw-msg" class="small text-danger mt-2" style="display:none;">Please fix password issues above to enable change.</div>
+                </div>
+
                 <div class="d-flex justify-content-end gap-2">
                     <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
-                    <button type="submit" class="btn btn-primary">Change Password</button>
+                    <button type="submit" id="btnChangePassword" class="btn btn-primary">Change Password</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+<style>
+    .input-with-icon {
+        position: relative;
+    }
+
+        .input-with-icon .form-control {
+            padding-right: 46px;
+        }
+
+    .btn-eye {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .pw-input.valid {
+        border-color: #198754;
+        box-shadow: 0 0 0 .08rem rgba(25,135,84,0.08);
+    }
+
+    .pw-input.invalid {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 .08rem rgba(220,53,69,0.06);
+    }
+
+    .pw-hints-vertical {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 10px;
+        max-width: 420px;
+    }
+
+    .pw-hint {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.98rem;
+        color: #333;
+    }
+
+    .hint-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: inline-block;
+        flex: none;
+    }
+
+        .hint-dot.ok {
+            background: #198754;
+        }
+
+        .hint-dot.fail {
+            background: #dc3545;
+        }
+</style>
+
 @section Scripts {
     <script>
-        (function() {
-            function toggle(btnId, selector){
-                const btn = document.getElementById(btnId);
-                const input = document.querySelector(selector);
-                if(!btn || !input) return;
-                btn.addEventListener('click', () => {
-                    if (input.type === 'password') { input.type = 'text'; btn.innerHTML = '<i class="bi bi-eye-slash"></i>'; }
-                    else { input.type = 'password'; btn.innerHTML = '<i class="bi bi-eye"></i>'; }
-                    input.focus();
-                });
+        (function () {
+            const minLen = 8;
+            const hintLengthEl = document.getElementById('hint-length-value');
+            if (hintLengthEl) hintLengthEl.innerText = minLen;
+
+            const newPw = document.getElementById('newPassword');
+            const confirmPw = document.getElementById('confirmPassword');
+            const currentPw = document.getElementById('currentPassword');
+
+            const toggleNew = document.getElementById('toggleNew');
+            const toggleConfirm = document.getElementById('toggleConfirm');
+            const toggleCurrent = document.getElementById('toggleCurrent');
+
+            const hLen = document.getElementById('h-length');
+            const hUpper = document.getElementById('h-upper');
+            const hLower = document.getElementById('h-lower');
+            const hNumber = document.getElementById('h-number');
+            const hSpecial = document.getElementById('h-special');
+            const pwMsg = document.getElementById('pw-msg');
+            const form = document.getElementById('bhwSettingsForm');
+            const submitBtn = document.getElementById('btnChangePassword');
+
+            function togglePw(btn, field) {
+                if (!field || !btn) return;
+                if (field.type === 'password') { field.type = 'text'; btn.innerHTML = '<i class="bi bi-eye-slash"></i>'; }
+                else { field.type = 'password'; btn.innerHTML = '<i class="bi bi-eye"></i>'; }
+                field.focus();
             }
-            toggle('toggleCurrent','[name="CurrentPassword"]');
-            toggle('toggleNew','[name="NewPassword"]');
-            toggle('toggleConfirm','[name="ConfirmPassword"]');
+
+            toggleNew?.addEventListener('click', () => togglePw(toggleNew, newPw));
+            toggleConfirm?.addEventListener('click', () => togglePw(toggleConfirm, confirmPw));
+            toggleCurrent?.addEventListener('click', () => togglePw(toggleCurrent, currentPw));
+
+            function testPassword(p) {
+                return {
+                    length: p.length >= minLen,
+                    upper: /[A-Z]/.test(p),
+                    lower: /[a-z]/.test(p),
+                    number: /\d/.test(p),
+                    special: /[^A-Za-z0-9]/.test(p)
+                };
+            }
+
+            function setDot(el, ok) {
+                if (!el) return;
+                el.classList.remove('ok','fail');
+                el.classList.add(ok ? 'ok' : 'fail');
+            }
+
+            function setFieldState(field, ok) {
+                if (!field) return;
+                field.classList.remove('valid','invalid');
+                if (field.value.length === 0) return;
+                field.classList.add(ok ? 'valid' : 'invalid');
+            }
+
+            function validatePasswordFields() {
+                const p = (newPw && newPw.value) ? newPw.value : '';
+                const c = (confirmPw && confirmPw.value) ? confirmPw.value : '';
+                const rules = testPassword(p);
+                const allOk = rules.length && rules.upper && rules.lower && rules.number && rules.special;
+                setDot(hLen, rules.length);
+                setDot(hUpper, rules.upper);
+                setDot(hLower, rules.lower);
+                setDot(hNumber, rules.number);
+                setDot(hSpecial, rules.special);
+
+                setFieldState(newPw, allOk);
+                setFieldState(confirmPw, (c.length > 0 && c === p));
+
+                const okConfirm = (p === c && c.length > 0);
+                return { allow: allOk && okConfirm, rules, p, c };
+            }
+
+            newPw?.addEventListener('input', () => { if (pwMsg) pwMsg.style.display = 'none'; validatePasswordFields(); });
+            confirmPw?.addEventListener('input', () => { if (pwMsg) pwMsg.style.display = 'none'; validatePasswordFields(); });
+
+            // prevent submit if validation fails
+            form?.addEventListener('submit', function (e) {
+                // if no new password filled (user wants to only change current?) allow server to handle it
+                // otherwise validate new/confirm
+                const newFilled = newPw && newPw.value && newPw.value.length > 0;
+                if (newFilled) {
+                    const valid = validatePasswordFields();
+                    if (!valid.allow) {
+                        e.preventDefault();
+                        if (pwMsg) {
+                            pwMsg.style.display = '';
+                            pwMsg.innerText = "Please fix password requirements and ensure confirmation matches.";
+                        }
+                        // focus first problem
+                        if (!valid.rules.length) newPw.focus();
+                        else if (!valid.rules.upper || !valid.rules.lower || !valid.rules.number || !valid.rules.special) newPw.focus();
+                        else confirmPw.focus();
+                        return;
+                    }
+                }
+                // else allow submit (server-side will validate CurrentPassword etc.)
+            });
+
+            // initialize visual state
+            validatePasswordFields();
         })();
     </script>
-    <style>
-        .input-with-icon {
-            position: relative;
-        }
-
-            .input-with-icon .form-control {
-                padding-right: 46px;
-            }
-
-        .btn-eye {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            border: 0;
-            background: transparent;
-        }
-    </style>
 }
-

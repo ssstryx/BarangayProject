@@ -1,9 +1,61 @@
-﻿@using BarangayProject.Models.AdminModel
+﻿@using System.Text.Json
+@using BarangayProject.Models.AdminModel
 @model DashboardViewModel
+
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Dashboard";
 }
+
+<style>
+    /* Ensure chart cards align and canvases fill container */
+    .card-equal {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .card-equal .card-body {
+            display: flex;
+            flex-direction: column;
+            padding: 1.25rem;
+            flex: 1 1 auto;
+        }
+
+    .chart-container {
+        position: relative;
+        width: 100%;
+        /* consistent height for most charts; adjust if you want taller/shorter */
+        height: 320px;
+        display: flex;
+        align-items: center;
+    }
+
+        .chart-container.small {
+            height: 300px;
+        }
+
+        .chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+    /* keep list below pie chart aligned */
+    .sitio-stats {
+        margin-top: .8rem;
+    }
+
+    /* slightly tighter card spacing on small screens */
+    @@media (max-width: 991.98px) {
+        .chart-container
+
+    {
+        height: 260px;
+    }
+
+    }
+</style>
 
 <div class="container-fluid py-4">
     <h2 class="fw-bold mb-4">Dashboard</h2>
@@ -38,59 +90,201 @@
         </div>
     </div>
 
-<div class="card card-hero mt-3">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Recent Activity</h5>
-            <div>
-                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmClearModal">
-                    <i class="bi bi-trash"></i> Clear
-                </button>
+    <!-- Charts grid: 2x2 — cards set to equal height -->
+    <div class="row g-3">
+        <!-- 1: Users (line) -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 card-equal">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Users (last 6 months)</h5>
+                        <small class="text-muted">Trend</small>
+                    </div>
+                    <div class="chart-container flex-fill">
+                        <canvas id="usersLineChart"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="list-group">
-            @if (Model.RecentActivities == null || !Model.RecentActivities.Any())
-            {
-                <div class="text-muted p-3">No recent activity.</div>
-            }
-            else
-            {
-                foreach (var item in Model.RecentActivities)
-                {
-                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                        <div>@Html.Raw(item.Description)</div>
-                        <small class="text-muted">@item.Timestamp.ToString("MMM dd, yyyy hh:mm tt")</small>
+        <!-- 2: Sitios (pie) -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 card-equal">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Sitios Assignment</h5>
+                        <small class="text-muted">Assigned vs Unassigned</small>
                     </div>
-                }
-            }
+                    <div class="chart-container flex-fill">
+                        <canvas id="sitiosPieChart"></canvas>
+                    </div>
+
+                    <div class="sitio-stats">
+                        <ul class="list-unstyled mb-0">
+                            @foreach (var sa in Model.SitiosByAssignment ?? new List<(string, int)>())
+                            {
+                                <li><strong>@sa.Item1</strong> — @sa.Item2</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3: Roles distribution (bar) -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 card-equal">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Users by Role</h5>
+                        <small class="text-muted">Distribution</small>
+                    </div>
+                    <div class="chart-container small flex-fill">
+                        <canvas id="rolesBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4: Active vs Inactive (doughnut) -->
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 card-equal">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">Account Status</h5>
+                        <small class="text-muted">Active vs Inactive</small>
+                    </div>
+                    <div class="chart-container small flex-fill">
+                        <canvas id="statusDoughnutChart"></canvas>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <small class="text-muted">Active: <strong>@Model.ActiveUsers</strong> — Inactive: <strong>@Model.InactiveUsers</strong></small>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Clear confirmation modal -->
-<div class="modal fade" id="confirmClearModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header border-0">
-        <h5 class="modal-title">Clear Recent Activity?</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p class="mb-0">This will permanently delete all recent activity logs from the database. Are you sure?</p>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        <form asp-action="ClearRecentActivity" method="post" class="m-0">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="btn btn-danger">Yes, clear activity</button>
-        </form>
-      </div>
-    </div>
-  </div>
-</div>
+    <script>
+        (function () {
+            var theme = {
+                primary: '#3366FF',
+                accent: '#00C49F',
+                danger: '#FF4D4F',
+                muted: '#9AA4B2',
+                chartPalette: ['#3366FF', '#00C49F', '#FFBB28', '#FF4D4F', '#8A56D6', '#00A3FF', '#FFC107', '#4CAF50']
+            };
 
+            // serialize tuples into named objects
+            var usersByMonth = @Html.Raw(JsonSerializer.Serialize(
+                            (Model.UsersByMonth ?? new List<(string Month, int Count)>()).Select(x => new { Month = x.Month, Count = x.Count })
+                    ));
 
+        var sitiosByAssignment = @Html.Raw(JsonSerializer.Serialize(
+                        (Model.SitiosByAssignment ?? new List<(string Label, int Count)>()).Select(x => new { Label = x.Label, Count = x.Count })
+                ));
 
-</div>
+        var rolesByCount = @Html.Raw(JsonSerializer.Serialize(
+                        (Model.RolesByCount ?? new List<(string Role, int Count)>()).Select(x => new { Role = x.Role, Count = x.Count })
+                ));
+
+        var activeCount = @(Model.ActiveUsers);
+        var inactiveCount = @(Model.InactiveUsers);
+
+            // USERS LINE
+            (function () {
+                var labels = (usersByMonth || []).map(o => o.Month);
+                var data = (usersByMonth || []).map(o => o.Count);
+                if (!labels.length) { labels = ['-']; data = [0]; }
+
+                var ctx = document.getElementById('usersLineChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'New users',
+                            data: data,
+                            fill: { target: 'origin', above: theme.primary + '33' },
+                            borderColor: theme.primary,
+                            backgroundColor: theme.primary + '22',
+                            tension: 0.28, pointRadius: 4, pointBackgroundColor: theme.primary, borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        animation: { duration: 700, easing: 'easeOutQuart' },
+                        plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+                        scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#f1f3f6' } } }
+                    }
+                });
+            })();
+
+            // SITIOS PIE
+            (function () {
+                var labels = (sitiosByAssignment || []).map(o => o.Label);
+                var data = (sitiosByAssignment || []).map(o => o.Count);
+                if (!labels.length) { labels = ['Unassigned']; data = [1]; }
+
+                var colors = labels.map((_, i) => theme.chartPalette[i % theme.chartPalette.length]);
+                var ctx = document.getElementById('sitiosPieChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'pie',
+                    data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, hoverOffset: 8 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        animation: { duration: 700, easing: 'easeOutBack' },
+                        plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: ctx => ctx.label + ': ' + ctx.raw } } }
+                    }
+                });
+            })();
+
+            // ROLES BAR (horizontal)
+            (function () {
+                var labels = (rolesByCount || []).map(o => o.Role);
+                var data = (rolesByCount || []).map(o => o.Count);
+                if (!labels.length) { labels = ['User']; data = [@Model.TotalUsers]; }
+
+                var colors = labels.map((_, i) => theme.chartPalette[i % theme.chartPalette.length]);
+                var ctx = document.getElementById('rolesBarChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels: labels, datasets: [{ label: 'Users', data: data, backgroundColor: colors, borderRadius: 6, maxBarThickness: 48 }] },
+                    options: {
+                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        animation: { duration: 700, easing: 'easeOutCubic' },
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, grid: { color: '#f1f3f6' } }, y: { grid: { display: false } } }
+                    }
+                });
+            })();
+
+            // STATUS DOUGHNUT
+            (function () {
+                var labels = ['Active', 'Inactive'];
+                var data = [Number(activeCount || 0), Number(inactiveCount || 0)];
+                var ctx = document.getElementById('statusDoughnutChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: { labels: labels, datasets: [{ data: data, backgroundColor: [theme.primary, theme.danger], hoverOffset: 8 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, cutout: '60%',
+                        animation: { animateRotate: true, duration: 800, easing: 'easeOutCirc' },
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: { callbacks: { label: function (ctx) {
+                                var t = ctx.label || '', v = ctx.raw || 0;
+                                var total = ctx.dataset.data.reduce((a,b)=>a+b,0); var pct = total ? Math.round((v/total)*100) : 0;
+                                return t + ': ' + v + ' (' + pct + '%)';
+                            } } }
+                        }
+                    }
+                });
+            })();
+        })();
+    </script>
+}

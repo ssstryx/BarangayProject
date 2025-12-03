@@ -33,9 +33,9 @@
 
     <div class="row mb-3 mt-3">
         <div class="col-md-6">
-            <form method="get" class="d-flex" id="householdsSearchForm" onsubmit="return false;">
-                <input id="householdsSearchInput" name="search" value="@currentSearch" class="form-control me-2" placeholder="Type to search..." autocomplete="off" />
-                <button id="householdsSearchBtn" class="btn btn-primary me-2">Search</button>
+            <form method="get" action="@Url.Action("Households", "Bhw")" class="d-flex" id="householdsSearchForm">
+                <input id="householdsSearchInput" name="q" value="@(ViewBag.SearchQuery ?? currentSearch ?? "")" class="form-control me-2" placeholder="Type to search..." autocomplete="off" />
+                <button id="householdsSearchBtn" class="btn btn-primary me-2" type="submit">Search</button>
                 <a class="btn btn-outline-secondary" href="@Url.Action("Households", "Bhw")">Clear</a>
             </form>
         </div>
@@ -183,6 +183,33 @@
             if (succ.trim() !== '') Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: succ, timer: 2200, showConfirmButton: false });
             if (err.trim() !== '') Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: err, timer: 2800, showConfirmButton: false });
 
+
+                    (function() {
+            const form = document.getElementById('householdsSearchForm');
+            const input = document.getElementById('householdsSearchInput');
+            const btn = document.getElementById('householdsSearchBtn');
+            // URL of the controller action (keeps routing)
+            const baseUrl = '@Url.Action("Households", "Bhw")';
+
+            function doSearch() {
+                const term = (input.value || '').trim();
+                // controller expects `q` parameter, so send q=...
+                const url = term ? baseUrl + '?q=' + encodeURIComponent(term) : baseUrl;
+                window.location.href = url;
+            }
+
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                doSearch();
+            });
+
+            // allow Enter inside the input
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    doSearch();
+                }
+            });
         })();
     </script>
 }

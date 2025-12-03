@@ -12,8 +12,6 @@
 
     var trendLabels = Model.TrendLabels ?? new List<string>();
     var trendValues = Model.TrendValues ?? new List<int>();
-
-    var recent = Model.RecentActivities ?? new List<DashboardViewModel>();
 }
 
 <style>
@@ -152,39 +150,6 @@
         </div>
 
     </div>
-
-    <!-- Recent Activity -->
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
-            <div class="d-flex justify-content-between mb-2">
-                <h5 class="fw-bold mb-0">Recent Activity</h5>
-                <span class="text-muted small">@recent.Count item(s)</span>
-            </div>
-
-            @if (!recent.Any())
-            {
-                <p class="text-muted mb-0">No recent activity.</p>
-            }
-            else
-            {
-                <ul class="list-group list-group-flush">
-                    @foreach (var a in recent.Take(20))
-                    {
-                        <li class="list-group-item d-flex justify-content-between">
-                            <div>
-                                <div class="fw-semibold">@a.Details</div>
-                                <div class="small text-muted">@a.Action</div>
-                            </div>
-                            <div class="small text-muted">
-                                @a.Timestamp.ToString("yyyy-MM-dd HH:mm")
-                            </div>
-                        </li>
-                    }
-                </ul>
-            }
-        </div>
-    </div>
-
 </div>
 
 <!-- Chart.js -->

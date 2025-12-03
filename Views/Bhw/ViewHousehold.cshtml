@@ -5,13 +5,11 @@
 @model Household
 
 @{
-    Layout = "~/Views/Shared/_BhwLayout.cshtml";
+    Layout = "~/Views/Shared/_BhwLayout.cshtml";     // use BHW layout so sidebar matches
     ViewData["Title"] = "Household Details";
 
-    // prefer explicit `from` query param (e.g. ?from=archived) so Back can return to the correct list
     var from = Context.Request.Query["from"].ToString();
 
-    // helper to compute age from nullable DOB (returns null when unknown)
     Func<DateTime?, int?> ComputeAge = (dob) =>
     {
         if (!dob.HasValue) return null;
@@ -22,19 +20,22 @@
         return age >= 0 ? (int?)age : null;
     };
 
-    string FormatDate = "MMM d, yyyy"; // e.g. Jan 2, 1990
+    string FormatDate = "MMM d, yyyy";
 }
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
 
 <style>
-    body > .sidebar {
-        display: none !important;
+    :root {
+        --sidebar-w: 240px;
+        --content-gap: 40px;
     }
 
     body > .main-content {
-        margin-left: 120px !important; 
-        padding: 20px 32px !important;
+        margin-left: var(--sidebar-w) !important;
+        padding: 28px 48px !important;
+        min-height: 100vh;
+        width: calc(100% - var(--sidebar-w));
     }
 
     .container, .container-fluid {
@@ -42,32 +43,32 @@
         width: 100% !important;
     }
 
-    .card.card-compact { width: 100%; }
-
-    @@media (max-width: 991px) {
-        body > .sidebar { display: none !important; }
-        body > .main-content { padding: 12px !important; }
+    .card.card-compact {
+        width: 100%;
     }
-</style>
 
-<style>
-    /* modern card + table styling */
     .details-hero {
         display: flex;
-        align-items: start;
-        justify-content: space-between;
         gap: 1rem;
+        align-items: flex-start;
+        justify-content: space-between;
         margin-bottom: 1rem;
+        width: 100%;
     }
 
         .details-hero .title {
             line-height: 1;
         }
 
-    .card-compact {
-        border-radius: 12px;
-        box-shadow: 0 6px 18px rgba(18, 38, 84, 0.06);
-        border: 1px solid rgba(16, 24, 40, 0.04);
+    .table-compact th, .table-compact td {
+        padding: .6rem .8rem;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .table-responsive {
+        overflow: auto;
+        width: 100%;
     }
 
     .meta-row {
@@ -81,11 +82,11 @@
 
     .resident-role {
         font-weight: 700;
-        font-size: 0.92rem;
+        font-size: .92rem;
     }
 
     .small-muted {
-        font-size: 0.9rem;
+        font-size: .9rem;
         color: #6b7280;
     }
 
@@ -98,38 +99,37 @@
         font-weight: 600;
     }
 
-    .table-compact th, .table-compact td {
-        padding: .5rem .6rem;
-        vertical-align: middle;
-    }
-
     .badge-role {
         background: #eef2ff;
         color: #0b3bff;
         font-weight: 600;
         border-radius: 6px;
-        padding: .3rem .45rem;
+        padding: .25rem .45rem;
     }
 
-    @@media (max-width:767px) {
+    @@media (max-width: 991px) {
+        body > .main-content {
+            margin-left: 0 !important;
+            padding: 12px !important;
+            width: 100% !important;
+        }
+
         .details-hero {
             flex-direction: column;
             align-items: stretch;
         }
+
+        .table-compact th, .table-compact td {
+            white-space: normal;
+        }
     }
 </style>
 
-@* Helper placed in a Razor @functions block so we can call it from the markup *@
 @functions {
-    // Robust DOB extractor: handles common property names (case-insensitive),
-    // DateTime / DateTime? / DateTimeOffset / nullable string, and proxy types.
     public DateTime? GetDobFromResident(object resident)
     {
         if (resident == null) return null;
-
         Type t = resident.GetType();
-
-        // handle EF proxy types (Castle/EF proxies) by falling back to base type
         if (t.Namespace != null && (t.Namespace.Contains("Castle") || t.Namespace.Contains("Proxy") || t.Name.Contains("Proxy")))
         {
             t = t.BaseType ?? t;
@@ -141,32 +141,12 @@
         {
             var p = t.GetProperty(name, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.IgnoreCase);
             if (p == null) continue;
-
             var raw = p.GetValue(resident);
             if (raw == null) continue;
 
-            // DateTime
-            if (raw is DateTime dt)
-            {
-                if (dt == DateTime.MinValue) return null;
-                return dt;
-            }
-
-            // Nullable<DateTime>
-            if (raw is DateTime?)
-            {
-                var ndt = (DateTime?)raw;
-                if (!ndt.HasValue || ndt.Value == DateTime.MinValue) return null;
-                return ndt.Value;
-            }
-
-            // DateTimeOffset
-            if (raw is DateTimeOffset dto)
-            {
-                return dto.DateTime;
-            }
-
-            // string parse fallback
+            if (raw is DateTime dt) { if (dt == DateTime.MinValue) return null; return dt; }
+            if (raw is DateTime?) { var ndt = (DateTime?)raw; if (!ndt.HasValue || ndt.Value == DateTime.MinValue) return null; return ndt.Value; }
+            if (raw is DateTimeOffset dto) { return dto.DateTime; }
             if (raw is string s && !string.IsNullOrWhiteSpace(s))
             {
                 if (DateTime.TryParse(s, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeLocal, out var parsed))
@@ -190,10 +170,8 @@
                 var detailsVal = detailsProp.GetValue(resident) as string;
                 if (!string.IsNullOrWhiteSpace(detailsVal))
                 {
-                    // quick heuristic: look for "dateOfBirth" / "dob" in the JSON (simple parse)
                     if (detailsVal.IndexOf("date", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        // naive search for an ISO date substring (this is only a fallback)
                         var dateTokens = System.Text.RegularExpressions.Regex.Matches(detailsVal, @"\d{4}-\d{2}-\d{2}");
                         if (dateTokens.Count > 0 && DateTime.TryParse(dateTokens[0].Value, out var parsed))
                         {
@@ -203,7 +181,7 @@
                 }
             }
         }
-        catch { /* ignore */ }
+        catch { }
 
         return null;
     }
@@ -305,75 +283,6 @@
                     </table>
                 </div>
             </div>
-
-            @{
-                var debugFlag = Context.Request.Query["debug"].ToString();
-            }
-            @if (!string.IsNullOrEmpty(debugFlag) && (debugFlag == "1" || debugFlag.Equals("true", StringComparison.OrdinalIgnoreCase)))
-            {
-                <div class="card mb-3 p-3 border-warning" style="background:#fffbea;">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <strong>DEBUG — first resident simple JSON (remove when done)</strong>
-                        <small class="text-muted">Shown because <code>?debug=1</code> present</small>
-                    </div>
-
-                    @{
-                        try
-                        {
-                            if (Model.Residents == null || !Model.Residents.Any())
-                            {
-                                <div class="text-muted">No residents to inspect.</div>
-                                ;
-                            }
-                            else
-                            {
-                                var first = Model.Residents.First();
-                                // build a simple dictionary of scalar/string/datetime properties only (avoid navigation props / cycles)
-                                var simple = new System.Collections.Generic.Dictionary<string, object?>();
-                                foreach (var p in first.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
-                                {
-                                    try
-                                    {
-                                        var t = p.PropertyType;
-                                        var val = p.GetValue(first);
-
-                                        if (val == null)
-                                        {
-                                            simple[p.Name] = null;
-                                            continue;
-                                        }
-
-                                        // treat date/time and primitives and strings as-is
-                                        if (t == typeof(string) || t == typeof(DateTime) || t == typeof(DateTime?) ||
-                                        t.IsPrimitive || t.IsEnum || (Nullable.GetUnderlyingType(t) != null && Nullable.GetUnderlyingType(t).IsPrimitive))
-                                        {
-                                            simple[p.Name] = val;
-                                            continue;
-                                        }
-
-                                        // else just use ToString() (safe) to avoid deeply traversing references
-                                        simple[p.Name] = val.ToString();
-                                    }
-                                    catch (Exception exProp)
-                                    {
-                                        simple[p.Name] = $"<error reading property: {exProp.Message}>";
-                                    }
-                                }
-
-                                var opts = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
-                                var json = System.Text.Json.JsonSerializer.Serialize(simple, opts);
-                                <pre style="max-height:360px; overflow:auto; white-space:pre-wrap; font-size:0.85rem; margin:0.25rem 0;">@Html.Raw(json)</pre>
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            <div class="text-danger">Debug error: @ex.Message</div>
-                        }
-                    }
-                </div>
-            }
-
-    
 
             <div class="card card-compact p-3 mb-3">
                 <h5 class="mb-2">Health</h5>
