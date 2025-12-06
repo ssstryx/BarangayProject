@@ -3,7 +3,7 @@
 
 @{
     Layout = "~/Views/Shared/_BnsLayout.cshtml";
-    ViewData["Title"] = "Archived Households";
+    ViewData["Title"] = "Archived Families";
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
@@ -11,17 +11,17 @@
 <div class="container-fluid py-3">
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-            <h2 class="mb-1 fw-bold">Archived Households</h2>
-            <p class="text-muted mb-0">List of archived households (read-only).</p>
+            <h2 class="mb-1 fw-bold">Archived Families</h2>
+            <p class="text-muted mb-0">List of archived families (read-only).</p>
         </div>
         <div>
-            <a asp-controller="Bns" asp-action="Households" class="btn btn-outline-secondary btn-sm">Back to active households</a>
+            <a asp-controller="Bns" asp-action="Families" class="btn btn-outline-secondary btn-sm">Back to active families</a>
         </div>
     </div>
 
     @if (!Model?.Any() ?? true)
     {
-        <div class="alert alert-info">No archived households found.</div>
+        <div class="alert alert-info">No archived families found.</div>
     }
     else
     {
@@ -43,7 +43,7 @@
                             {
                                 <tr>
                                     <td colspan="5" class="text-center text-muted py-3">
-                                        No archived households.
+                                        No archived families.
                                     </td>
                                 </tr>
                             }

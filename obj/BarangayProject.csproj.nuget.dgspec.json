@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Admin\\source\\repos\\BarangayProject\\BarangayProject.csproj": {}
+    "C:\\Users\\beahr\\Source\\Repos\\BarangayProject\\BarangayProject.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Admin\\source\\repos\\BarangayProject\\BarangayProject.csproj": {
+    "C:\\Users\\beahr\\Source\\Repos\\BarangayProject\\BarangayProject.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\BarangayProject.csproj",
+        "projectUniqueName": "C:\\Users\\beahr\\Source\\Repos\\BarangayProject\\BarangayProject.csproj",
         "projectName": "BarangayProject",
-        "projectPath": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\BarangayProject.csproj",
-        "packagesPath": "C:\\Users\\Admin\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Admin\\source\\repos\\BarangayProject\\obj\\",
+        "projectPath": "C:\\Users\\beahr\\Source\\Repos\\BarangayProject\\BarangayProject.csproj",
+        "packagesPath": "C:\\Users\\beahr\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\beahr\\Source\\Repos\\BarangayProject\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\Admin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\beahr\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,7 +26,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {

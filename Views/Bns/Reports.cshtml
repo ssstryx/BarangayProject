@@ -86,112 +86,251 @@
 </div>
 
 @section Scripts {
-    <script>
-        (function () {
-            const reportSelect = document.getElementById('reportSelect');
-            const sitioSelect = document.getElementById('sitioSelect');
-            const startDate = document.getElementById('startDate');
-            const endDate = document.getElementById('endDate');
-            const btnFetch = document.getElementById('btnFetch');
-            const exportExcel = document.getElementById('exportExcel');
-            const exportPdf = document.getElementById('exportPdf');
-            const exportCsv = document.getElementById('exportCsv');
-            const tableHeader = document.getElementById('tableHeader');
-            const tableBody = document.getElementById('tableBody');
+<script>
+(async function () {
+    // elements
+    const reportSelect = document.getElementById('reportSelect');
+    const sitioSelect = document.getElementById('sitioSelect');
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+    const btnFetch = document.getElementById('btnFetch');
+    const exportExcel = document.getElementById('exportExcel');
+    const exportPdf = document.getElementById('exportPdf');
+    const exportCsv = document.getElementById('exportCsv');
+    const tableHeader = document.getElementById('tableHeader');
+    const tableBody = document.getElementById('tableBody');
 
-            function buildQuery() {
-                const params = new URLSearchParams();
-                params.set('reportType', reportSelect.value || 'households');
+    // simple loader for external scripts
+    function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            // if already loaded, resolve
+            if (document.querySelector(`script[src="${src}"]`)) return resolve();
+            const s = document.createElement('script');
+            s.src = src;
+            s.async = false;
+            s.onload = () => resolve();
+            s.onerror = (e) => reject(new Error('Failed to load ' + src));
+            document.head.appendChild(s);
+        });
+    }
 
-                if (startDate.value) params.set('startDate', startDate.value);
-                if (endDate.value) params.set('endDate', endDate.value);
-                if (sitioSelect && sitioSelect.value) params.set('sitioId', sitioSelect.value);
-                return params.toString();
+    // try to ensure jsPDF + autotable are available
+    async function ensureJsPdf() {
+        try {
+            // load jspdf then autotable (use reputable cdn without integrity to avoid mismatch)
+            if (!window.jspdf) {
+                await loadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
             }
-
-            function setTableColumns(columns) {
-                tableHeader.innerHTML = '';
-                columns.forEach(c => {
-                    const th = document.createElement('th');
-                    th.textContent = c;
-                    tableHeader.appendChild(th);
-                });
+            // autotable attaches to jspdf API; load AFTER jspdf
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                console.warn('jspdf loaded but API not found yet.');
             }
+            if (!window.jspdfAutoTable && !(window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.autoTable)) {
+                await loadScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.28/dist/jspdf.plugin.autotable.min.js');
+            }
+            return true;
+        } catch (err) {
+            console.error('ensureJsPdf error', err);
+            return false;
+        }
+    }
 
-            function setTableRows(rows, columns) {
-                tableBody.innerHTML = '';
-                if (!rows || rows.length === 0) {
-                    const tr = document.createElement('tr');
-                    const td = document.createElement('td');
-                    td.colSpan = columns.length || 1;
-                    td.className = 'text-center text-muted py-3';
-                    td.textContent = 'No data found.';
-                    tr.appendChild(td);
-                    tableBody.appendChild(tr);
-                    return;
+    // build query string for endpoints
+    function buildQuery() {
+        const params = new URLSearchParams();
+        params.set('reportType', reportSelect?.value || 'households');
+        if (startDate?.value) params.set('startDate', startDate.value);
+        if (endDate?.value) params.set('endDate', endDate.value);
+        if (sitioSelect && sitioSelect.value) params.set('sitioId', sitioSelect.value);
+        return params.toString();
+    }
+
+    // render helpers (unchanged)
+    function setTableColumns(columns) {
+        tableHeader.innerHTML = '';
+        (columns || []).forEach(c => {
+            const th = document.createElement('th');
+            th.textContent = c;
+            tableHeader.appendChild(th);
+        });
+    }
+    function setTableRows(rows, columns) {
+        tableBody.innerHTML = '';
+        if (!rows || rows.length === 0) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = columns.length || 1;
+            td.className = 'text-center text-muted py-3';
+            td.textContent = 'No data found.';
+            tr.appendChild(td);
+            tableBody.appendChild(tr);
+            return;
+        }
+        rows.forEach(r => {
+            const tr = document.createElement('tr');
+            columns.forEach(c => {
+                const td = document.createElement('td');
+                let v = r[c];
+                if (v === null || typeof v === 'undefined') v = '';
+                td.textContent = v;
+                tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+        });
+    }
+
+    // fetch & render (unchanged)
+    async function fetchAndRender() {
+        const q = buildQuery();
+        const url = `/Bns/GetReportData?${q}`;
+        if (btnFetch) { btnFetch.disabled = true; btnFetch.textContent = 'Loading...'; }
+        try {
+            const res = await fetch(url, { credentials: 'same-origin' });
+            if (!res.ok) throw new Error('Failed to fetch: ' + res.status);
+            const payload = await res.json();
+            setTableColumns(payload.columns || []);
+            setTableRows(payload.rows || [], payload.columns || []);
+        } catch (err) {
+            console.error('fetchAndRender error', err);
+            if (window.Swal && typeof Swal.fire === 'function') {
+                Swal.fire('Error', 'Failed to load report data. Check console/network.', 'error');
+            } else {
+                alert('Failed to load report data. Check console/network.');
+            }
+        } finally {
+            if (btnFetch) { btnFetch.disabled = false; btnFetch.textContent = 'Filter'; }
+        }
+    }
+
+    // helpers to get table columns/rows for PDF
+    function getTableColumns() {
+        const ths = tableHeader ? tableHeader.querySelectorAll('th') : [];
+        return Array.from(ths).map(t => t.textContent.trim());
+    }
+    function getTableRows() {
+        const cols = getTableColumns();
+        const trs = tableBody ? tableBody.querySelectorAll('tr') : [];
+        const rows = [];
+        trs.forEach(tr => {
+            const tds = Array.from(tr.querySelectorAll('td'));
+            if (!tds || tds.length === 0) return;
+            // skip 'no data' row
+            if (tds.length === 1 && tds[0].colSpan && Number(tds[0].colSpan) === cols.length && /no data/i.test(tds[0].textContent)) return;
+            const row = cols.map((c, i) => {
+                const cell = tds[i];
+                return cell ? cell.textContent.trim() : '';
+            });
+            rows.push(row);
+        });
+        return rows;
+    }
+
+    // Export CSV & Excel handlers (server)
+    exportCsv?.addEventListener('click', function () {
+        const q = buildQuery();
+        window.open(`/Bns/ExportCsv?${q}`, '_blank');
+    });
+    exportExcel?.addEventListener('click', function () {
+        const q = buildQuery();
+        window.open(`/Bns/ExportExcel?${q}`, '_blank');
+    });
+
+    // robust PDF handler
+    exportPdf?.addEventListener('click', async function (e) {
+        e.preventDefault();
+        // try load libs
+        const ok = await ensureJsPdf();
+        if (!ok) {
+            // fallback to server PDF endpoint if client libs fail
+            console.warn('Client-side PDF libraries not available, falling back to server ExportPdf.');
+            const q = buildQuery();
+            window.open(`/Bns/ExportPdf?${q}`, '_blank');
+            return;
+        }
+
+        // sanity checks
+        if (!window.jspdf) {
+            console.error('jspdf global missing after load.');
+            alert('PDF generation failed (jspdf missing). Using server fallback.');
+            window.open(`/Bns/ExportPdf?${buildQuery()}`, '_blank');
+            return;
+        }
+
+        // get data
+        const cols = getTableColumns();
+        const rows = getTableRows();
+
+        if (!cols || cols.length === 0) {
+            alert('No table columns to export. Please load report data first.');
+            return;
+        }
+
+        // build file name and meta
+        const rt = reportSelect?.value || 'report';
+        const now = new Date();
+        const stamp = now.getFullYear().toString().padStart(4,'0')
+                    + (now.getMonth()+1).toString().padStart(2,'0')
+                    + now.getDate().toString().padStart(2,'0')
+                    + now.getHours().toString().padStart(2,'0')
+                    + now.getMinutes().toString().padStart(2,'0')
+                    + now.getSeconds().toString().padStart(2,'0');
+        const filename = `${rt}_${stamp}.pdf`;
+        const sitio = (sitioSelect && sitioSelect.options && sitioSelect.selectedIndex >= 0) ? (sitioSelect.options[sitioSelect.selectedIndex].text || sitioSelect.value) : 'All Sitios';
+        const from = startDate?.value || '-';
+        const to = endDate?.value || '-';
+        const title = `Report: ${rt}`;
+        const meta = `Sitio: ${sitio}   From: ${from}   To: ${to}`;
+
+        try {
+            // create jsPDF and table
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'landscape' });
+
+            doc.setFontSize(14);
+            doc.text(title, 40, 40);
+            doc.setFontSize(10);
+            doc.text(meta, 40, 58);
+
+            // use autoTable; plugin attaches .autoTable on jsPDF instance
+            const startY = 75;
+            // convert rows from array-of-arrays to array-of-objects expected earlier versions - we can pass body as arrays
+            doc.autoTable({
+                head: [cols],
+                body: rows,
+                startY: startY,
+                styles: { fontSize: 9, cellPadding: 6 },
+                headStyles: { fillColor: [240,240,240] },
+                theme: 'grid',
+                didDrawPage: function (data) {
+                    const pageInfo = doc.internal.getCurrentPageInfo();
+                    const page = pageInfo.pageNumber;
+                    const pageCount = doc.getNumberOfPages();
+                    const footer = `Page ${page} / ${pageCount}`;
+                    doc.setFontSize(9);
+                    doc.text(footer, doc.internal.pageSize.getWidth() - 60, doc.internal.pageSize.getHeight() - 20);
                 }
-
-                rows.forEach(r => {
-                    const tr = document.createElement('tr');
-                    columns.forEach(c => {
-                        const td = document.createElement('td');
-                        let v = r[c];
-                        if (v === null || typeof v === 'undefined') v = '';
-                        td.textContent = v;
-                        tr.appendChild(td);
-                    });
-                    tableBody.appendChild(tr);
-                });
-            }
-
-            async function fetchAndRender() {
-                const q = buildQuery();
-                // NOTE: call the Bns endpoints
-                const url = `/Bns/GetReportData?${q}`;
-                btnFetch.disabled = true;
-                btnFetch.textContent = 'Loading...';
-                try {
-                    const res = await fetch(url, { credentials: 'same-origin' });
-                    if (!res.ok) throw new Error('Failed to fetch: ' + res.status);
-                    const payload = await res.json();
-                    setTableColumns(payload.columns || []);
-                    setTableRows(payload.rows || [], payload.columns || []);
-                } catch (err) {
-                    console.error(err);
-                    // safe Swal fallback: only call if Swal exists
-                    if (window.Swal && typeof Swal.fire === 'function') {
-                        Swal.fire('Error', 'Failed to load report data. Check console/network.', 'error');
-                    } else {
-                        alert('Failed to load report data. Check console/network.');
-                    }
-                } finally {
-                    btnFetch.disabled = false;
-                    btnFetch.textContent = 'Filter';
-                }
-            }
-
-            btnFetch.addEventListener('click', function (e) { e.preventDefault(); fetchAndRender(); });
-            reportSelect.addEventListener('change', fetchAndRender);
-            sitioSelect && sitioSelect.addEventListener('change', fetchAndRender);
-            [startDate, endDate].forEach(inp => inp && inp.addEventListener('change', fetchAndRender));
-
-            exportExcel.addEventListener('click', function () {
-                const q = buildQuery();
-                window.open(`/Bns/ExportExcel?${q}`, '_blank');
             });
 
-            exportPdf.addEventListener('click', function () {
-                const q = buildQuery();
-                window.open(`/Bns/ExportPdf?${q}`, '_blank');
-            });
+            doc.save(filename);
+        } catch (err) {
+            console.error('PDF generation error', err);
+            alert('PDF generation failed in the browser. Falling back to server PDF (check console).');
+            window.open(`/Bns/ExportPdf?${buildQuery()}`, '_blank');
+        }
+    });
 
-            exportCsv.addEventListener('click', function () {
-                const q = buildQuery();
-                window.open(`/Bns/ExportCsv?${q}`, '_blank');
-            });
+    // wire up fetch events
+    btnFetch?.addEventListener('click', function (e) { e.preventDefault(); fetchAndRender(); });
+    reportSelect?.addEventListener('change', fetchAndRender);
+    sitioSelect && sitioSelect.addEventListener('change', fetchAndRender);
+    [startDate, endDate].forEach(inp => inp && inp.addEventListener('change', fetchAndRender));
 
-            // initial load
-            fetchAndRender();
-        })();
-    </script>
+    // initial load
+    fetchAndRender();
+
+})();
+</script>
 }
+
+}
+

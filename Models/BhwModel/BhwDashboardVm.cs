@@ -7,7 +7,7 @@ namespace BarangayProject.Models.BhwModel
     {
         public string? UserEmail { get; set; }
         public int TotalPopulation { get; set; }
-        public int TotalHouseholds { get; set; }
+        public int TotalFamilies { get; set; }
         public int TotalFemale { get; set; }
         public int TotalMale { get; set; }
 

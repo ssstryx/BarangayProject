@@ -15,14 +15,15 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace BarangayProject.Controllers
 {
+    // Account actions: login, logout, password reset, access denied
     public class AccountController : Controller
     {
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly ApplicationDbContext _db;
-        private readonly ILogger<AccountController> _logger;
-        private readonly IEmailSender _emailSender;
+        private readonly UserManager<ApplicationUser> _userManager;// user operations
+        private readonly SignInManager<ApplicationUser> _signInManager;// sign in/out
+        private readonly RoleManager<IdentityRole> _roleManager;// roles
+        private readonly ApplicationDbContext _db;// database
+        private readonly ILogger<AccountController> _logger;// logging
+        private readonly IEmailSender _emailSender;// email sending
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
@@ -32,6 +33,7 @@ namespace BarangayProject.Controllers
             ILogger<AccountController> logger,
             IEmailSender emailSender)
         {
+            // assign dependencies
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
@@ -70,7 +72,7 @@ namespace BarangayProject.Controllers
         [HttpGet]
         public IActionResult Login(string returnUrl = null)
         {
-            return View(new LoginViewModel { ReturnUrl = returnUrl });
+            return View(new LoginViewModel { ReturnUrl = returnUrl });// show form
         }
 
         [HttpPost]
@@ -100,7 +102,7 @@ namespace BarangayProject.Controllers
                 model.RememberMe,
                 lockoutOnFailure: true
             );
-
+            // clear messages
             if (result.Succeeded)
             {
                 TempData.Remove("InfoMessage");
@@ -109,10 +111,11 @@ namespace BarangayProject.Controllers
                 TempData.Remove("SuccessMessage");
 
                 if (!string.IsNullOrEmpty(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
-                    return LocalRedirect(model.ReturnUrl);
+                    return LocalRedirect(model.ReturnUrl);// return to origin
 
                 var roles = await _userManager.GetRolesAsync(user);
 
+                // redirect by role
                 if (roles.Any(r => r.Equals("Admin", StringComparison.OrdinalIgnoreCase)))
                     return RedirectToAction("Index", "Admin");
 
@@ -125,8 +128,9 @@ namespace BarangayProject.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
+
             if (result.IsLockedOut)
-                return View("Lockout");
+                return View("Lockout");// locked out view
 
             if (result.IsNotAllowed)
             {

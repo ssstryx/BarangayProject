@@ -30,6 +30,7 @@ using System.Threading.Tasks;
 namespace BarangayProject.Controllers
 {
     [Authorize(Roles = "Admin")]
+    // Controller: AdminController — handles web requests for admin
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _db;
@@ -205,6 +206,7 @@ namespace BarangayProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: ToggleDeactivate — async Task<IActionResult> action
         public async Task<IActionResult> ToggleDeactivate(string id, string userId)
         {
             // accept either parameter name (form uses "id", some links may use "userId")
@@ -321,6 +323,7 @@ namespace BarangayProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: AddUser — async Task<IActionResult> action
         public async Task<IActionResult> AddUser([FromForm] BarangayProject.Models.AddUserVm model)
         {
             // model is the class in Models/AddUserVm.cs (your strongly-typed model)
@@ -458,6 +461,7 @@ namespace BarangayProject.Controllers
         }
 
         [HttpGet]
+        // Short: EditUser — async Task<IActionResult> action
         public async Task<IActionResult> EditUser(string id)
         {
             if (string.IsNullOrWhiteSpace(id)) return BadRequest();
@@ -483,6 +487,7 @@ namespace BarangayProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: EditUser — async Task<IActionResult> action
         public async Task<IActionResult> EditUser(EditUserVm model)
         {
             if (!ModelState.IsValid)
@@ -579,6 +584,7 @@ namespace BarangayProject.Controllers
         }
 
         [HttpGet]
+        // Short: CreateSitio — IActionResult action
         public IActionResult CreateSitio()
         {
             return View(new Sitio());
@@ -586,6 +592,7 @@ namespace BarangayProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: CreateSitio — async Task<IActionResult> action
         public async Task<IActionResult> CreateSitio(Sitio model)
         {
             if (!ModelState.IsValid) return View(model);
@@ -633,6 +640,7 @@ namespace BarangayProject.Controllers
         }
 
         [HttpGet]
+        // Short: EditSitio — async Task<IActionResult> action
         public async Task<IActionResult> EditSitio(int id)
         {
             var sitio = await _db.Sitios.Include(s => s.SitioBhws).FirstOrDefaultAsync(s => s.Id == id);
@@ -642,6 +650,7 @@ namespace BarangayProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: EditSitio — async Task<IActionResult> action
         public async Task<IActionResult> EditSitio(int id, Sitio model)
         {
             if (id != model.Id) return BadRequest();
@@ -672,6 +681,7 @@ namespace BarangayProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: DeleteSitio — async Task<IActionResult> action
         public async Task<IActionResult> DeleteSitio(int? id)
         {
             if (!id.HasValue)
@@ -827,6 +837,7 @@ namespace BarangayProject.Controllers
         // POST: AssignBhw
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: AssignBhw — async Task<IActionResult> action
         public async Task<IActionResult> AssignBhw(int sitioId, List<string> selectedBhwIds)
         {
             var sitio = await _db.Sitios.Include(s => s.SitioBhws).FirstOrDefaultAsync(s => s.Id == sitioId);
@@ -873,6 +884,7 @@ namespace BarangayProject.Controllers
         // Remove a single SitioBhw join row (invoked by your "Remove" button)
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: RemoveAssignedBhw — async Task<IActionResult> action
         public async Task<IActionResult> RemoveAssignedBhw(int sitioId, string bhwId)
         {
             if (sitioId <= 0 || string.IsNullOrWhiteSpace(bhwId))
@@ -916,6 +928,7 @@ namespace BarangayProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: AssignSitioSelect — IActionResult action
         public IActionResult AssignSitioSelect(int sitioId)
         {
             if (sitioId <= 0)
@@ -1328,15 +1341,15 @@ namespace BarangayProject.Controllers
                 }
             }
             var debugProfiles = await _db.UserProfiles.ToListAsync();
-                foreach (var p in debugProfiles)
-                {
-                    Console.WriteLine($"PROFILE: UserId={p.UserId}, UserNumber={p.UserNumber}, SitioId={p.SitioId}");
-                }
+            foreach (var p in debugProfiles)
+            {
+                Console.WriteLine($"PROFILE: UserId={p.UserId}, UserNumber={p.UserNumber}, SitioId={p.SitioId}");
+            }
 
 
-                return (columns, rows);
+            return (columns, rows);
         }
-        
+
 
         private static DateTime? TryParseDate(string? raw)
         {
@@ -1482,6 +1495,7 @@ namespace BarangayProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: Settings — async Task<IActionResult> action
         public async Task<IActionResult> Settings(SettingsViewModel model)
         {
             try
@@ -1908,6 +1922,7 @@ namespace BarangayProject.Controllers
         }
 
         [HttpGet]
+        // Short: PromptVerifyEmail — IActionResult action
         public IActionResult PromptVerifyEmail()
         {
             return View();
@@ -1915,6 +1930,7 @@ namespace BarangayProject.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: SendVerificationEmail — async Task<IActionResult> action
         public async Task<IActionResult> SendVerificationEmail()
         {
             var currentUser = await _userManager.GetUserAsync(User);
@@ -1941,6 +1957,7 @@ namespace BarangayProject.Controllers
 
         [HttpGet]
         [AllowAnonymous]
+        // Short: ConfirmEmail — async Task<IActionResult> action
         public async Task<IActionResult> ConfirmEmail(string userId, string token)
         {
             if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(token))

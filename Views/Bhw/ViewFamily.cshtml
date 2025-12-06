@@ -6,7 +6,7 @@
 
 @{
     Layout = "~/Views/Shared/_BhwLayout.cshtml";     // use BHW layout so sidebar matches
-    ViewData["Title"] = "Household Details";
+    ViewData["Title"] = "Family Details";
 
     var from = Context.Request.Query["from"].ToString();
 
@@ -191,7 +191,7 @@
     <div class="details-hero">
         <div class="title">
             <h2 class="mb-1">@Model.FamilyHead</h2>
-            <div class="small-muted">Household ID: <span class="fw-semibold">@Model.Id</span></div>
+            <div class="small-muted">Family ID: <span class="fw-semibold">@Model.Id</span></div>
             <div class="muted mt-1">Sitio: <span class="fw-semibold">@((Model.Sitio?.Name) ?? "Unassigned")</span></div>
         </div>
     </div>
@@ -346,8 +346,8 @@
             <div class="card card-compact p-3 mb-3">
                 <h6 class="mb-2">Quick Actions</h6>
                 <div class="d-grid gap-2">
-                    <a asp-action="EditHousehold" asp-route-id="@Model.Id" class="btn btn-outline-primary">Edit Household</a>
-                    <a asp-action="Households" class="btn btn-outline-secondary">Return to List</a>
+                    <a asp-action="EditFamily" asp-route-id="@Model.Id" class="btn btn-outline-primary">Edit Family</a>
+                    <a asp-action="Families" class="btn btn-outline-secondary">Return to Family List</a>
                 </div>
             </div>
         </div>

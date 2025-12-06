@@ -3,7 +3,7 @@
 
 @{
     Layout = "~/Views/Shared/_BhwLayout.cshtml";
-    ViewData["Title"] = "Archived Households";
+    ViewData["Title"] = "Archived Families";
 }
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
@@ -11,17 +11,17 @@
 <div class="container-fluid py-3">
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
-            <h2 class="mb-1 fw-bold">Archived Households</h2>
-            <p class="text-muted mb-0">List of soft-deleted/archived households.</p>
+            <h2 class="mb-1 fw-bold">Archived Families</h2>
+            <p class="text-muted mb-0">List of soft-deleted/archived families.</p>
         </div>
         <div>
-            <a asp-action="Households" class="btn btn-outline-secondary btn-sm">Back to active households</a>
+            <a asp-action="Families" class="btn btn-outline-secondary btn-sm">Back to active families</a>
         </div>
     </div>
 
     @if (!Model?.Any() ?? true)
     {
-        <div class="alert alert-info">No archived households found.</div>
+        <div class="alert alert-info">No archived families found.</div>
     }
     else
     {
@@ -46,12 +46,12 @@
                         <td>@(hh.ArchivedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
                         <td>@(hh.ArchivedBy ?? "-")</td>
                         <td class="text-end">
-                            <a asp-action="ViewHousehold"
+                            <a asp-action="ViewFamily"
                                asp-route-id="@hh.Id"
                                asp-route-from="archived"
                                class="btn btn-sm btn-outline-primary me-1">View</a>
 
-                            <form asp-action="RestoreHousehold" method="post" class="d-inline restore-form">
+                            <form asp-action="RestoreFamily" method="post" class="d-inline restore-form">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="id" value="@hh.Id" />
                                 <button type="button" class="btn btn-sm btn-success restore-btn">Restore</button>
@@ -86,14 +86,14 @@
                     e.preventDefault();
                     // find family head text (for nicer message). We can find <tr> ancestor
                     const tr = form.closest('tr');
-                    let name = 'this household';
+                    let name = 'this family';
                     if (tr) {
                         const nameCell = tr.querySelector('td:nth-child(2)');
                         if (nameCell) name = nameCell.textContent.trim() || name;
                     }
 
                     Swal.fire({
-                        title: 'Restore this household?',
+                        title: 'Restore this family?',
                         html: `Restore <strong>${name}</strong> from archive?`,
                         icon: 'question',
                         showCancelButton: true,

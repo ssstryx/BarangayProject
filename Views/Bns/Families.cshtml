@@ -5,7 +5,7 @@
 
 @{
     Layout = "~/Views/Shared/_BnsLayout.cshtml";
-    ViewData["Title"] = "Households";
+    ViewData["Title"] = "Families";
 
     var currentSearch = ViewBag.CurrentSearch as string ?? "";
     var selectedSitioId = ViewBag.SelectedSitioId as string ?? "";
@@ -18,12 +18,12 @@
     <div class="d-flex align-items-center justify-content-between mb-3">
         <div>
         <br>
-            <h2 class="mb-1 fw-bold">Households</h2>
+            <h2 class="mb-1 fw-bold">Families</h2>
         </div>
 
         <!-- Filter / Search (no Add button) -->
         <div class="d-flex gap-2">
-            <a asp-action="ArchivedHouseholds" class="btn btn-outline-secondary">View Archive</a>
+            <a asp-action="ArchivedFamilies" class="btn btn-outline-secondary">View Archived Families</a>
         </div>
     </div>
 
@@ -38,7 +38,7 @@
 
     <div class="row mb-3 mt-3">
         <div class="col-md-8">
-            <form method="get" class="d-flex" id="householdsSearchForm" onsubmit="return false;">
+            <form method="get" class="d-flex" id="familiesSearchForm" onsubmit="return false;">
                 <select id="sitioFilter" name="sitioId" class="form-select me-2" style="max-width:260px;">
                     <option value="">All Sitios</option>
 
@@ -51,19 +51,19 @@
                     }
                 </select>
 
-                <input id="householdsSearchInput" name="search" value="@currentSearch" class="form-control me-2" placeholder="Type to search..." autocomplete="off" />
-                <button id="householdsSearchBtn" class="btn btn-primary me-2">Filter</button>
-                <a class="btn btn-outline-secondary" href="@Url.Action("Households", "Bns")">Clear</a>
+                <input id="familiesSearchInput" name="search" value="@currentSearch" class="form-control me-2" placeholder="Type to search families..." autocomplete="off" />
+                <button id="familiesSearchBtn" class="btn btn-primary me-2">Filter</button>
+                <a class="btn btn-outline-secondary" href="@Url.Action("Families", "Bns")">Clear</a>
             </form>
         </div>
     </div>
 
     <div class="card p-3 shadow-sm">
         <div class="table-responsive">
-            <table id="householdsTable" class="table table-hover align-middle mb-0">
+            <table id="familiesTable" class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
-                        <th style="width:120px;">Household ID</th>
+                        <th style="width:120px;">Family ID</th>
                         <th style="width:260px;">Family Head</th>
                         <th style="width:200px;">Sitio</th>
                         <th style="width:160px;">Date Added</th>
@@ -77,7 +77,7 @@
                         {
                             <tr class="no-results-placeholder">
                                 <td colspan="5" class="text-center py-4">
-                                    <div class="no-results-box">No households found.</div>
+                                    <div class="no-results-box">No families found.</div>
                                 </td>
                             </tr>
                         }
@@ -100,7 +100,7 @@
                                     </td>
                                     <td>
                                         <!-- View only -->
-                                        <a asp-action="ViewHousehold" asp-route-id="@h.Id" class="btn btn-outline-primary btn-sm">View</a>
+                                        <a asp-action="ViewFamily" asp-route-id="@h.Id" class="btn btn-outline-primary btn-sm">View</a>
                                     </td>
                                 </tr>
                             }
@@ -115,9 +115,9 @@
 <style>
     .text-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono", monospace; }
     .id-cell { color: #495057; }
-    #householdsTable td, #householdsTable th { padding-left: 14px !important; padding-right: 14px !important; }
-    #householdsTable td { font-size: 15px; }
-    #householdsTable th { font-size: 14px; font-weight: 600; text-transform: uppercase; }
+    #familiesTable td, #familiesTable th { padding-left: 14px !important; padding-right: 14px !important; }
+    #familiesTable td { font-size: 15px; }
+    #familiesTable th { font-size: 14px; font-weight: 600; text-transform: uppercase; }
     .no-results-placeholder td { padding: 0 !important; background: transparent !important; }
     .no-results-box { width: 100%; padding: 1.6rem 1rem; background: #f5f7fa; color: #6c757d; border-radius: 6px; font-size: 1rem; margin: 0 auto; }
 </style>
@@ -127,10 +127,10 @@
 
     <script>
         (function () {
-            const input = document.getElementById('householdsSearchInput');
+            const input = document.getElementById('familiesSearchInput');
             const sitioSelect = document.getElementById('sitioFilter');
 
-            document.getElementById('householdsSearchBtn').addEventListener('click', function (e) {
+            document.getElementById('familiesSearchBtn').addEventListener('click', function (e) {
                 e.preventDefault();
                 const url = new URL(window.location.href);
                 url.searchParams.set('search', input.value || '');
@@ -141,13 +141,13 @@
             input.addEventListener('keypress', function (e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    document.getElementById('householdsSearchBtn').click();
+                                        document.getElementById('familiesSearchBtn').click();
                 }
             });
 
             // optional: submit filter when sitio changed
             sitioSelect.addEventListener('change', function () {
-                document.getElementById('householdsSearchBtn').click();
+                                    document.getElementById('familiesSearchBtn').click();
             });
 
             const succ = '@(TempData["SuccessMessage"] ?? "")';

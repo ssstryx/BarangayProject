@@ -9,6 +9,7 @@ using BarangayProject.Models.BhwModel;
 
 namespace BarangayProject.Data
 {
+    // main database context
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)

@@ -3,6 +3,7 @@ using BarangayProject.Models;
 using BarangayProject.Models.BhwModel;
 using BarangayProject.Models.BnsModel;
 using BarangayProject.Models.AdminModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +16,8 @@ using System.Threading.Tasks;
 
 namespace BarangayProject.Controllers
 {
+    [Authorize(Roles = "BNS")]
+    // Controller: BnsController — handles web requests for bns
     public class BnsController : Controller
     {
         private readonly ApplicationDbContext _db;
@@ -31,30 +34,56 @@ namespace BarangayProject.Controllers
             _signInManager = signInManager;
         }
 
+        // Helper: Calculate age from DOB (using local time for consistency)
+        // Note: This helper must be called *after* data is materialized (e.g., after .ToList or .ToArray)
+        private static int CalculateAge(DateTime dob)
+        {
+            var today = DateTime.Now.Date;
+            var dobDate = dob.Date;
+            var age = today.Year - dobDate.Year;
+            // Go back a year if the birthday hasn't happened yet this year
+            if (dobDate > today.AddYears(-age)) age--;
+            return age;
+        }
+
+        // Helper: CSV escape logic
+        private static string CsvEscape(string input)
+        {
+            if (input == null) return "";
+            var needsQuote = input.Contains(",") || input.Contains("\"") || input.Contains("\n") || input.Contains("\r");
+            var s = input.Replace("\"", "\"\"");
+            return needsQuote ? "\"" + s + "\"" : s;
+        }
+
         // Index: dashboard (returns BnsDashboardVm)
         public async Task<IActionResult> Index()
         {
-            var totalHouseholds = await _db.Households.AsNoTracking().Where(h => !h.IsArchived).CountAsync();
-            var totalResidents = await _db.Residents.AsNoTracking().CountAsync();
-            var totalFemale = await _db.Residents.AsNoTracking().Where(r => r.Sex == "Female").CountAsync();
-            var totalMale = await _db.Residents.AsNoTracking().Where(r => r.Sex == "Male").CountAsync();
+            // Filter: Active households (IsArchived is false or null)
+            var totalHouseholds = await _db.Households.AsNoTracking().Where(h => h.IsArchived != true).CountAsync();
+
+            // Filter: Active residents (IsArchived is false or null)
+            var activeResidentsQuery = _db.Residents.AsNoTracking().Where(r => r.IsArchived != true);
+
+            var totalResidents = await activeResidentsQuery.CountAsync();
+            var totalFemale = await activeResidentsQuery.Where(r => r.Sex == "Female").CountAsync();
+            var totalMale = await activeResidentsQuery.Where(r => r.Sex == "Male").CountAsync();
 
             var labels = new List<string>();
             var values = new List<int>();
 
-            var now = DateTime.UtcNow.Date;
+            var now = DateTime.Now.Date;
 
             for (int i = 5; i >= 0; i--)
             {
                 var month = now.AddMonths(-i);
-                var monthStart = new DateTime(month.Year, month.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+                // Use new DateTime() with local kind for consistency with DateTime.Now.Date
+                var monthStart = new DateTime(month.Year, month.Month, 1, 0, 0, 0, DateTimeKind.Local);
                 var monthEnd = monthStart.AddMonths(1).AddTicks(-1);
 
-                // count residents created within this month
-                var count = await _db.Residents
-                                     .AsNoTracking()
-                                     .Where(r => r.CreatedAt.HasValue && r.CreatedAt.Value >= monthStart && r.CreatedAt.Value <= monthEnd)
-                                     .CountAsync();
+                // count active residents created within this month
+                var count = await activeResidentsQuery
+                                               .Where(r => r.CreatedAt.HasValue && r.CreatedAt.Value >= monthStart && r.CreatedAt.Value <= monthEnd)
+                                               .CountAsync();
 
                 labels.Add(monthStart.ToString("MMM yyyy"));
                 values.Add(count);
@@ -73,14 +102,14 @@ namespace BarangayProject.Controllers
             return View(vm);
         }
 
-        // Households list (read-only for BNS)
+        // Families list (read-only for BNS)
         public async Task<IActionResult> Households(string search, int? sitioId)
         {
             var query = _db.Households
-                       .AsNoTracking()
-                       .Include(h => h.Sitio)
-                       .Where(h => !h.IsArchived)
-                       .AsQueryable();
+                        .AsNoTracking()
+                        .Include(h => h.Sitio)
+                        .Where(h => h.IsArchived != true) // Filter for active households
+                        .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(h => EF.Functions.Like(h.FamilyHead, $"%{search}%"));
@@ -89,10 +118,10 @@ namespace BarangayProject.Controllers
                 query = query.Where(h => h.SitioId == sitioId.Value);
 
             ViewBag.Sitios = await _db.Sitios
-                                      .AsNoTracking()
-                                      .OrderBy(s => s.Name)
-                                      .Select(s => new { s.Id, s.Name })
-                                      .ToListAsync();
+                                          .AsNoTracking()
+                                          .OrderBy(s => s.Name)
+                                          .Select(s => new { s.Id, s.Name })
+                                          .ToListAsync();
 
             ViewBag.SelectedSitioId = sitioId?.ToString() ?? "";
             ViewBag.CurrentSearch = search ?? "";
@@ -101,13 +130,14 @@ namespace BarangayProject.Controllers
             return View(list);
         }
 
-        // Household detail (read-only)
+        // Family detail (read-only)
         public async Task<IActionResult> ViewHousehold(int id)
         {
             var h = await _db.Households
                              .AsNoTracking()
                              .Include(hh => hh.Sitio)
-                             .Include(hh => hh.Residents)
+                             // Only active residents
+                             .Include(hh => hh.Residents.Where(r => r.IsArchived != true))
                              .FirstOrDefaultAsync(hh => hh.Id == id);
 
             if (h == null) return NotFound();
@@ -116,12 +146,15 @@ namespace BarangayProject.Controllers
 
             return View(h);
         }
+
+        // Short: Residents — async Task<IActionResult> action
         public async Task<IActionResult> Residents(string q, int? sitioId)
         {
             var baseQuery = _db.Residents
                                .AsNoTracking()
                                .Include(r => r.Household)
                                    .ThenInclude(h => h.Sitio)
+                               .Where(r => r.IsArchived != true) // Filter for active residents
                                .AsQueryable();
 
             if (sitioId.HasValue)
@@ -140,8 +173,13 @@ namespace BarangayProject.Controllers
                     EF.Functions.Like(r.Education ?? "", term));
             }
 
-            var list = await baseQuery
+            // Materialize the list first (fetch from database)
+            var rawList = await baseQuery
                 .OrderBy(r => r.Id)
+                .ToListAsync();
+
+            // Use LINQ to Objects to project and calculate age after fetching data
+            var list = rawList
                 .Select(r => new ResidentListVm
                 {
                     Id = r.Id,
@@ -157,15 +195,16 @@ namespace BarangayProject.Controllers
                     Occupation = r.Occupation ?? "",
                     Education = r.Education ?? "",
                     DateOfBirth = r.DateOfBirth,
+                    // FIX 2: Calculate Age on client-side
                     Age = r.DateOfBirth.HasValue ? (int?)CalculateAge(r.DateOfBirth.Value) : r.Age
                 })
-                .ToListAsync();
+                .ToList();
 
             ViewBag.Sitios = await _db.Sitios
-                                      .AsNoTracking()
-                                      .OrderBy(s => s.Name)
-                                      .Select(s => new { s.Id, s.Name })
-                                      .ToListAsync();
+                                          .AsNoTracking()
+                                          .OrderBy(s => s.Name)
+                                          .Select(s => new { s.Id, s.Name })
+                                          .ToListAsync();
 
             ViewBag.SelectedSitioId = sitioId?.ToString() ?? "";
             ViewBag.SearchQuery = q ?? "";
@@ -179,16 +218,12 @@ namespace BarangayProject.Controllers
             var r = await _db.Residents
                              .AsNoTracking()
                              .Include(x => x.Household)
-                                .ThenInclude(h => h.Sitio)
+                                 .ThenInclude(h => h.Sitio)
                              .FirstOrDefaultAsync(x => x.Id == id);
 
             if (r == null) return NotFound();
             return View(r);
         }
-
-        // -----------------------
-        // Archived lists (BNS view-only)
-        // -----------------------
 
         // GET: /Bns/ArchivedResidents?q=...&sitioId=...
         public async Task<IActionResult> ArchivedResidents(string q, int? sitioId)
@@ -216,8 +251,13 @@ namespace BarangayProject.Controllers
                     EF.Functions.Like(r.Education ?? "", term));
             }
 
-            var list = await baseQuery
+            // Materialize the list first (fetch from database)
+            var rawList = await baseQuery
                 .OrderBy(r => r.Id)
+                .ToListAsync();
+
+            // Use LINQ to Objects to project and calculate age after fetching data
+            var list = rawList
                 .Select(r => new ResidentListVm
                 {
                     Id = r.Id,
@@ -233,15 +273,16 @@ namespace BarangayProject.Controllers
                     Occupation = r.Occupation ?? "",
                     Education = r.Education ?? "",
                     DateOfBirth = r.DateOfBirth,
+                    // FIX 2: Calculate Age on client-side
                     Age = r.DateOfBirth.HasValue ? (int?)CalculateAge(r.DateOfBirth.Value) : r.Age
                 })
-                .ToListAsync();
+                .ToList();
 
             ViewBag.Sitios = await _db.Sitios
-                                      .AsNoTracking()
-                                      .OrderBy(s => s.Name)
-                                      .Select(s => new { s.Id, s.Name })
-                                      .ToListAsync();
+                                          .AsNoTracking()
+                                          .OrderBy(s => s.Name)
+                                          .Select(s => new { s.Id, s.Name })
+                                          .ToListAsync();
 
             ViewBag.SelectedSitioId = sitioId?.ToString() ?? "";
             ViewBag.SearchQuery = q ?? "";
@@ -254,10 +295,10 @@ namespace BarangayProject.Controllers
         public async Task<IActionResult> ArchivedHouseholds(int? sitioId)
         {
             var query = _db.Households
-                           .AsNoTracking()
-                           .Include(h => h.Sitio)
-                           .Where(h => h.IsArchived == true)
-                           .AsQueryable();
+                               .AsNoTracking()
+                               .Include(h => h.Sitio)
+                               .Where(h => h.IsArchived == true)
+                               .AsQueryable();
 
             if (sitioId.HasValue)
                 query = query.Where(h => h.SitioId == sitioId.Value);
@@ -265,10 +306,10 @@ namespace BarangayProject.Controllers
             var list = await query.OrderBy(h => h.Id).ToListAsync();
 
             ViewBag.Sitios = await _db.Sitios
-                                      .AsNoTracking()
-                                      .OrderBy(s => s.Name)
-                                      .Select(s => new { s.Id, s.Name })
-                                      .ToListAsync();
+                                          .AsNoTracking()
+                                          .OrderBy(s => s.Name)
+                                          .Select(s => new { s.Id, s.Name })
+                                          .ToListAsync();
 
             ViewBag.SelectedSitioId = sitioId?.ToString() ?? "";
 
@@ -276,122 +317,28 @@ namespace BarangayProject.Controllers
             return View("ArchivedHouseholds", list);
         }
 
-        // -----------------------
-        // Reports: view + data endpoints
-        // -----------------------
-
         // GET: /Bns/Reports
         public async Task<IActionResult> Reports()
         {
             // Sitio filter for the reports page dropdown
             ViewBag.Sitios = await _db.Sitios
-                                      .AsNoTracking()
-                                      .OrderBy(s => s.Name)
-                                      .Select(s => new { s.Id, s.Name })
-                                      .ToListAsync();
+                                          .AsNoTracking()
+                                          .OrderBy(s => s.Name)
+                                          .Select(s => new { s.Id, s.Name })
+                                          .ToListAsync();
 
             ViewBag.SelectedSitioId = "";
             // return default view (Views/Bns/Reports.cshtml)
             return View();
         }
+
         [HttpGet]
         public async Task<IActionResult> GetReportData(string reportType = "households", string startDate = null, string endDate = null, int? sitioId = null)
         {
-            // Parse dates (inclusive)
-            DateTime? start = null, end = null;
-            if (DateTime.TryParse(startDate, out var sd)) start = sd.Date;
-            if (DateTime.TryParse(endDate, out var ed)) end = ed.Date.AddDays(1).AddTicks(-1);
+            var data = await GetReportPayload(reportType, startDate, endDate, sitioId);
+            if (data == null) return BadRequest(new { error = "Unknown reportType" });
 
-            reportType = (reportType ?? "households").ToLowerInvariant();
-
-            var columns = new List<string>();
-            var rows = new List<Dictionary<string, object>>();
-
-            if (reportType == "households" || reportType == "archived-households")
-            {
-                var wantArchived = reportType == "archived-households";
-                var query = _db.Households.AsNoTracking().Include(h => h.Sitio).AsQueryable();
-
-                // If IsArchived is nullable bool in your model, comparing directly is fine; adjust if needed.
-                query = query.Where(h => (h.IsArchived == wantArchived));
-
-                if (sitioId.HasValue)
-                    query = query.Where(h => h.SitioId == sitioId.Value);
-
-                if (start.HasValue)
-                    query = query.Where(h => h.CreatedAt >= start.Value);
-
-                if (end.HasValue)
-                    query = query.Where(h => h.CreatedAt <= end.Value);
-
-                var list = await query.OrderBy(h => h.Id).ToListAsync();
-
-                columns.AddRange(new[] { "HouseholdId", "FamilyHead", "Sitio", "CreatedAt", "IsArchived" });
-
-                foreach (var h in list)
-                {
-                    rows.Add(new Dictionary<string, object>
-                    {
-                        ["HouseholdId"] = h.Id,
-                        ["FamilyHead"] = h.FamilyHead,
-                        ["Sitio"] = h.Sitio?.Name ?? (h.SitioId?.ToString() ?? "-"),
-                        ["CreatedAt"] = (h.CreatedAt == default(DateTime) ? "" : h.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")),
-                        ["IsArchived"] = h.IsArchived
-                    });
-                }
-            }
-            else if (reportType == "residents" || reportType == "archived-residents")
-            {
-                var wantArchived = reportType == "archived-residents";
-                var query = _db.Residents.AsNoTracking()
-                            .Include(r => r.Household)
-                                .ThenInclude(h => h.Sitio)
-                            .AsQueryable();
-
-                if (wantArchived)
-                    query = query.Where(r => r.IsArchived == true);
-                else
-                    query = query.Where(r => r.IsArchived != true);
-
-                if (sitioId.HasValue)
-                    query = query.Where(r => r.Household != null && r.Household.SitioId == sitioId.Value);
-
-                if (start.HasValue)
-                    query = query.Where(r => r.CreatedAt.HasValue && r.CreatedAt.Value >= start.Value);
-
-                if (end.HasValue)
-                    query = query.Where(r => r.CreatedAt.HasValue && r.CreatedAt.Value <= end.Value);
-
-                var list = await query.OrderBy(r => r.Id).ToListAsync();
-
-                columns.AddRange(new[] { "ResidentId", "HouseholdId", "Name", "Sex", "Occupation", "Education", "DateOfBirth", "Age", "IsArchived" });
-
-                foreach (var r in list)
-                {
-                    var name = $"{r.FirstName} {r.MiddleName} {r.LastName} {(string.IsNullOrWhiteSpace(r.Extension) ? "" : r.Extension)}".Replace("  ", " ").Trim();
-                    var age = r.DateOfBirth.HasValue
-                        ? (DateTime.UtcNow.Date.Year - r.DateOfBirth.Value.Date.Year - (DateTime.UtcNow.Date < r.DateOfBirth.Value.Date.AddYears(DateTime.UtcNow.Date.Year - r.DateOfBirth.Value.Date.Year) ? 1 : 0))
-                        : r.Age;
-                    rows.Add(new Dictionary<string, object>
-                    {
-                        ["ResidentId"] = r.Id,
-                        ["HouseholdId"] = r.HouseholdId,
-                        ["Name"] = name,
-                        ["Sex"] = r.Sex ?? "",
-                        ["Occupation"] = r.Occupation ?? "",
-                        ["Education"] = r.Education ?? "",
-                        ["DateOfBirth"] = r.DateOfBirth.HasValue ? r.DateOfBirth.Value.ToString("yyyy-MM-dd") : "",
-                        ["Age"] = age,
-                        ["IsArchived"] = r.IsArchived == true
-                    });
-                }
-            }
-            else
-            {
-                return BadRequest(new { error = "Unknown reportType" });
-            }
-
-            return Json(new { columns, rows });
+            return Json(new { columns = data.Value.columns, rows = data.Value.rows });
         }
 
         // Simple CSV export (re-uses same filtering as GetReportData)
@@ -422,25 +369,41 @@ namespace BarangayProject.Controllers
             return File(bytes, "text/csv; charset=utf-8", $"{reportType}_{DateTime.UtcNow:yyyyMMddHHmmss}.csv");
         }
 
-        // Simple Excel export: return CSV with .xlsx name (quick fallback)
+        // Fix 3: Renamed to clarify it exports CSV data with an XLSX filename hint.
         [HttpGet]
-        public async Task<IActionResult> ExportExcel(string reportType = "households", string startDate = null, string endDate = null, int? sitioId = null)
+        public async Task<IActionResult> ExportCsvExcel(string reportType = "households", string startDate = null, string endDate = null, int? sitioId = null)
         {
-            // For now return same CSV but with .xlsx filename (replace later with proper Excel generation)
-            return await ExportCsv(reportType, startDate, endDate, sitioId);
+            // Return same CSV but with .xlsx filename to help Excel open it
+            var dataResult = await GetReportPayload(reportType, startDate, endDate, sitioId);
+            if (dataResult == null) return BadRequest();
+
+            var columns = dataResult.Value.columns;
+            var rows = dataResult.Value.rows;
+
+            var sb = new StringBuilder();
+            sb.AppendLine(string.Join(",", columns.Select(c => CsvEscape(c))));
+            foreach (var r in rows)
+            {
+                var parts = columns.Select(c =>
+                {
+                    r.TryGetValue(c, out var v);
+                    return CsvEscape(v?.ToString() ?? "");
+                });
+                sb.AppendLine(string.Join(",", parts));
+            }
+
+            var bytes = Encoding.UTF8.GetBytes(sb.ToString());
+            // Changed filename extension to .xlsx
+            return File(bytes, "text/csv; charset=utf-8", $"{reportType}_{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx");
         }
 
         // PDF placeholder
         [HttpGet]
         public IActionResult ExportPdf(string reportType = "households", string startDate = null, string endDate = null, int? sitioId = null)
         {
-            // implement with a PDF library later (DinkToPdf, wkhtmltopdf, etc.)
+            // Returning a 501 Not Implemented status as per original placeholder logic
             return StatusCode(501, "PDF export not implemented yet.");
         }
-
-        // -----------------------
-        // Settings (change password)
-        // -----------------------
 
         // GET: /Bns/Settings
         [HttpGet]
@@ -453,6 +416,7 @@ namespace BarangayProject.Controllers
         // POST: /Bns/Settings
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: Settings — async Task<IActionResult> action
         public async Task<IActionResult> Settings(ChangePasswordVm model)
         {
             if (!ModelState.IsValid)
@@ -483,66 +447,73 @@ namespace BarangayProject.Controllers
             return RedirectToAction(nameof(Settings));
         }
 
-        // -----------------------
-        // Helpers
-        // -----------------------
-
         // Small helper to prepare the same payload used by GetReportData for file exports
         private async Task<(List<string> columns, List<Dictionary<string, object>> rows)?> GetReportPayload(string reportType, string startDate, string endDate, int? sitioId)
         {
-            // basically reuse logic from GetReportData but return data instead of IActionResult
+            // Parse dates (inclusive)
             DateTime? start = null, end = null;
             if (DateTime.TryParse(startDate, out var sd)) start = sd.Date;
             if (DateTime.TryParse(endDate, out var ed)) end = ed.Date.AddDays(1).AddTicks(-1);
 
-            reportType = (reportType ?? "households").ToLowerInvariant();
+            reportType = (reportType ?? "households").ToLowerInvariant().Replace("families", "households"); // Standardize on 'households'
 
             var columns = new List<string>();
             var rows = new List<Dictionary<string, object>>();
+            var isArchivedReport = reportType.Contains("archived");
 
-            if (reportType == "households" || reportType == "archived-households")
+            if (reportType.Contains("households"))
             {
-                var wantArchived = reportType == "archived-households";
                 var query = _db.Households.AsNoTracking().Include(h => h.Sitio).AsQueryable();
-                query = query.Where(h => (h.IsArchived == wantArchived));
+
+                // Fixed logic to correctly filter based on archive status (active/archived)
+                query = query.Where(h => h.IsArchived == isArchivedReport);
 
                 if (sitioId.HasValue) query = query.Where(h => h.SitioId == sitioId.Value);
                 if (start.HasValue) query = query.Where(h => h.CreatedAt >= start.Value);
                 if (end.HasValue) query = query.Where(h => h.CreatedAt <= end.Value);
 
                 var list = await query.OrderBy(h => h.Id).ToListAsync();
-                columns.AddRange(new[] { "HouseholdId", "FamilyHead", "Sitio", "CreatedAt", "IsArchived" });
+                columns.AddRange(new[] { "FamilyId", "FamilyHead", "Sitio", "CreatedAt", "IsArchived" });
+
                 foreach (var h in list)
                 {
                     rows.Add(new Dictionary<string, object>
                     {
-                        ["HouseholdId"] = h.Id,
+                        ["FamilyId"] = h.Id,
                         ["FamilyHead"] = h.FamilyHead,
                         ["Sitio"] = h.Sitio?.Name ?? (h.SitioId?.ToString() ?? "-"),
+                        // Ensure date is output in consistent format
                         ["CreatedAt"] = (h.CreatedAt == default(DateTime) ? "" : h.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")),
                         ["IsArchived"] = h.IsArchived
                     });
                 }
             }
-            else if (reportType == "residents" || reportType == "archived-residents")
+            else if (reportType.Contains("residents"))
             {
-                var wantArchived = reportType == "archived-residents";
                 var query = _db.Residents.AsNoTracking().Include(r => r.Household).ThenInclude(h => h.Sitio).AsQueryable();
 
-                if (wantArchived) query = query.Where(r => r.IsArchived == true);
-                else query = query.Where(r => r.IsArchived != true);
+                // Fixed logic to correctly filter based on archive status
+                if (isArchivedReport)
+                    query = query.Where(r => r.IsArchived == true);
+                else
+                    query = query.Where(r => r.IsArchived != true); // Active records
 
                 if (sitioId.HasValue) query = query.Where(r => r.Household != null && r.Household.SitioId == sitioId.Value);
                 if (start.HasValue) query = query.Where(r => r.CreatedAt.HasValue && r.CreatedAt.Value >= start.Value);
                 if (end.HasValue) query = query.Where(r => r.CreatedAt.HasValue && r.CreatedAt.Value <= end.Value);
 
+                // Materialize the list first (fetch from database)
                 var list = await query.OrderBy(r => r.Id).ToListAsync();
+
                 columns.AddRange(new[] { "ResidentId", "HouseholdId", "Name", "Sex", "Occupation", "Education", "DateOfBirth", "Age", "IsArchived" });
 
                 foreach (var r in list)
                 {
                     var name = $"{r.FirstName} {r.MiddleName} {r.LastName} {(string.IsNullOrWhiteSpace(r.Extension) ? "" : r.Extension)}".Replace("  ", " ").Trim();
-                    var age = r.DateOfBirth.HasValue ? (DateTime.UtcNow.Date.Year - r.DateOfBirth.Value.Date.Year - (DateTime.UtcNow.Date < r.DateOfBirth.Value.Date.AddYears(DateTime.UtcNow.Date.Year - r.DateOfBirth.Value.Date.Year) ? 1 : 0)) : r.Age;
+
+                    // FIX 4: Use the reusable CalculateAge helper (client-side)
+                    var age = r.DateOfBirth.HasValue ? (int?)CalculateAge(r.DateOfBirth.Value) : r.Age;
+
                     rows.Add(new Dictionary<string, object>
                     {
                         ["ResidentId"] = r.Id,
@@ -563,24 +534,6 @@ namespace BarangayProject.Controllers
             }
 
             return (columns, rows);
-        }
-
-        private static string CsvEscape(string input)
-        {
-            if (input == null) return "";
-            var needsQuote = input.Contains(",") || input.Contains("\"") || input.Contains("\n") || input.Contains("\r");
-            var s = input.Replace("\"", "\"\"");
-            return needsQuote ? "\"" + s + "\"" : s;
-        }
-
-        // helper: calculate age from DOB (UTC-aware)
-        private static int CalculateAge(DateTime dobUtc)
-        {
-            var today = DateTime.UtcNow.Date;
-            var dob = dobUtc.Date;
-            var age = today.Year - dob.Year;
-            if (today < dob.AddYears(age)) age--;
-            return age;
         }
     }
 }

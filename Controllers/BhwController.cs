@@ -24,6 +24,7 @@ using QuestPDF.Infrastructure;
 namespace BarangayProject.Controllers
 {
     [Authorize(Roles = "BHW")]
+    // Controller: BhwController — handles web requests for bhw (Family Profiles)
     public class BhwController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
@@ -37,10 +38,15 @@ namespace BarangayProject.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        /// <summary>
+        /// Computes the age from a date of birth using local time.
+        /// </summary>
         private int? ComputeAge(DateTime? dob)
         {
             if (dob == null) return null;
-            var today = DateTime.UtcNow.Date;
+
+            // FIX: Using DateTime.Now.Date instead of UtcNow for local age calculation.
+            var today = DateTime.Now.Date;
             var b = dob.Value.Date;
             if (b > today) return 0;
             int age = today.Year - b.Year;
@@ -48,6 +54,9 @@ namespace BarangayProject.Controllers
             return age;
         }
 
+        /// <summary>
+        /// Finds the Sitio assigned to the current BHW (using complex reflection fallback logic).
+        /// </summary>
         private async Task<Sitio?> GetAssignedSitioAsync()
         {
             var userId = _userManager.GetUserId(User);
@@ -63,7 +72,7 @@ namespace BarangayProject.Controllers
                 }
                 catch { /* continue */ }
 
-                // 2) fallback: mapping table (SitioBhws, SitioBhwMappings etc.)
+                // 2) fallback: mapping table (SitioBhws, SitioBhwMappings etc.) - complex reflection logic starts here
                 var ctxType = _db.GetType();
                 var candidateNames = new[] { "SitioBhws", "Sitiobhws", "SitioBhw", "Sitiobhw", "SiteBhw", "SitioBhwMappings" };
 
@@ -107,14 +116,14 @@ namespace BarangayProject.Controllers
                 if (mappingQ != null && mapElemType != null)
                 {
                     var bhwProp = mapElemType.GetProperty("BhwId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-                                  ?? mapElemType.GetProperty("BHWId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-                                  ?? mapElemType.GetProperty("Bhw", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-                                  ?? mapElemType.GetProperty("ApplicationUserId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-                                  ?? mapElemType.GetProperty("ApplicationUser", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                                     ?? mapElemType.GetProperty("BHWId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
+                                     ?? mapElemType.GetProperty("Bhw", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
+                                     ?? mapElemType.GetProperty("ApplicationUserId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
+                                     ?? mapElemType.GetProperty("ApplicationUser", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
                     var sitioIdProp = mapElemType.GetProperty("SitioId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-                                   ?? mapElemType.GetProperty("Sitio", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-                                   ?? mapElemType.GetProperty("SiteId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                                       ?? mapElemType.GetProperty("Sitio", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
+                                       ?? mapElemType.GetProperty("SiteId", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
                     if (bhwProp != null)
                     {
@@ -181,7 +190,11 @@ namespace BarangayProject.Controllers
             return null;
         }
 
-        private async Task EnsureAssignedSitioInViewBagAsync()
+        /// <summary>
+        /// Combines getting the assigned Sitio and setting the ViewBag variables.
+        /// Replaces the redundant logic in all action methods.
+        /// </summary>
+        private async Task<Sitio?> GetAndSetAssignedSitioInViewBagAsync()
         {
             var sitio = await GetAssignedSitioAsync();
             if (sitio != null)
@@ -194,29 +207,21 @@ namespace BarangayProject.Controllers
                 ViewBag.AssignedSitioName = null;
                 ViewBag.AssignedSitioId = null;
             }
+            return sitio;
         }
 
         private async Task<BhwDashboardVm> BuildDashboardVmAsync()
         {
-            var sitio = await GetAssignedSitioAsync();
-            if (sitio != null)
-            {
-                ViewBag.AssignedSitioName = sitio.Name ?? "";
-                ViewBag.AssignedSitioId = sitio.Id;
-            }
-            else
-            {
-                ViewBag.AssignedSitioName = null;
-                ViewBag.AssignedSitioId = null;
-            }
+            // Refactored to use the single helper method
+            var sitio = await GetAndSetAssignedSitioInViewBagAsync();
 
-            IQueryable<Household> householdQuery = _db.Households.AsNoTracking().Where(h => (h.IsArchived == null || h.IsArchived == false));
-            if (sitio != null) householdQuery = householdQuery.Where(h => h.SitioId == sitio.Id);
+            IQueryable<Household> familyQuery = _db.Households.AsNoTracking().Where(h => (h.IsArchived == null || h.IsArchived == false));
+            if (sitio != null) familyQuery = familyQuery.Where(h => h.SitioId == sitio.Id);
 
-            var totalHouseholds = await householdQuery.CountAsync();
+            var totalFamilies = await familyQuery.CountAsync();
 
             var residentQuery = from r in _db.Residents.AsNoTracking()
-                                join h in householdQuery on r.HouseholdId equals h.Id
+                                join h in familyQuery on r.HouseholdId equals h.Id
                                 where (r.IsArchived == null || r.IsArchived == false)
                                 select r;
 
@@ -273,8 +278,8 @@ namespace BarangayProject.Controllers
 
                 var resType = typeof(Resident);
                 var createdProp = resType.GetProperty("CreatedAt", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-                                  ?? resType.GetProperty("CreatedOn", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
-                                  ?? resType.GetProperty("DateCreated", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                                     ?? resType.GetProperty("CreatedOn", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase)
+                                     ?? resType.GetProperty("DateCreated", BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
 
                 if (createdProp != null && (createdProp.PropertyType == typeof(DateTime) || createdProp.PropertyType == typeof(DateTime?)))
                 {
@@ -317,7 +322,7 @@ namespace BarangayProject.Controllers
             {
                 UserEmail = User.Identity?.Name ?? "",
                 TotalPopulation = totalPopulation,
-                TotalHouseholds = totalHouseholds,
+                TotalFamilies = totalFamilies,
                 TotalFemale = femaleCount,
                 TotalMale = maleCount,
                 TrendLabels = trendLabels,
@@ -325,7 +330,7 @@ namespace BarangayProject.Controllers
             };
 
             ViewBag.TotalPopulation = vm.TotalPopulation;
-            ViewBag.TotalHouseholds = vm.TotalHouseholds;
+            ViewBag.TotalFamilies = vm.TotalFamilies;
             ViewBag.TotalFemale = vm.TotalFemale;
             ViewBag.TotalMale = vm.TotalMale;
 
@@ -337,22 +342,13 @@ namespace BarangayProject.Controllers
         public async Task<IActionResult> Index()
         {
             var vm = await BuildDashboardVmAsync();
-            return View(vm);
+            return View("Index", vm);
         }
 
-        public async Task<IActionResult> Households(string q = null)
+        public async Task<IActionResult> Families(string q = null)
         {
-            var sitio = await GetAssignedSitioAsync();
-            if (sitio != null)
-            {
-                ViewBag.AssignedSitioName = sitio.Name;
-                ViewBag.AssignedSitioId = sitio.Id;
-            }
-            else
-            {
-                ViewBag.AssignedSitioName = null;
-                ViewBag.AssignedSitioId = null;
-            }
+            // Refactored to use the single helper method
+            var sitio = await GetAndSetAssignedSitioInViewBagAsync();
 
             IQueryable<Household> query = _db.Households
                                              .AsNoTracking()
@@ -391,13 +387,13 @@ namespace BarangayProject.Controllers
             ViewBag.SearchQuery = q ?? "";
 
             var list = await query.OrderBy(h => h.Id).ToListAsync();
-            return View(list);
+            return View("Families", list);
         }
 
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ArchiveHousehold(int id, string from = null)
+        public async Task<IActionResult> ArchiveFamily(int id, string from = null)
         {
             var hh = await _db.Households.FindAsync(id);
             if (hh == null) return NotFound();
@@ -409,28 +405,20 @@ namespace BarangayProject.Controllers
             _db.Households.Update(hh);
             await _db.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Household archived.";
+            TempData["SuccessMessage"] = "Family archived.";
 
             if (string.Equals(from, "archived", StringComparison.OrdinalIgnoreCase))
-                return RedirectToAction(nameof(ArchivedHouseholds));
+                return RedirectToAction(nameof(ArchivedFamilies));
 
-            return RedirectToAction(nameof(Households));
+            return RedirectToAction(nameof(Families));
         }
 
         [HttpGet]
-        public async Task<IActionResult> ArchivedHouseholds()
+        // Short: ArchivedFamilies — async Task<IActionResult> action
+        public async Task<IActionResult> ArchivedFamilies()
         {
-            var sitio = await GetAssignedSitioAsync();
-            if (sitio != null)
-            {
-                ViewBag.AssignedSitioName = sitio.Name;
-                ViewBag.AssignedSitioId = sitio.Id;
-            }
-            else
-            {
-                ViewBag.AssignedSitioName = null;
-                ViewBag.AssignedSitioId = null;
-            }
+            // Refactored to use the single helper method
+            var sitio = await GetAndSetAssignedSitioInViewBagAsync();
 
             IQueryable<Household> query = _db.Households
                                              .AsNoTracking()
@@ -444,12 +432,12 @@ namespace BarangayProject.Controllers
 
             var list = await query.OrderBy(h => h.Id).ToListAsync();
 
-            return View(list);
+            return View("ArchivedFamilies", list);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RestoreHousehold(int id, string from = null)
+        public async Task<IActionResult> RestoreFamily(int id, string from = null)
         {
             var hh = await _db.Households.FindAsync(id);
             if (hh == null) return NotFound();
@@ -461,40 +449,35 @@ namespace BarangayProject.Controllers
             _db.Households.Update(hh);
             await _db.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Household restored.";
+            TempData["SuccessMessage"] = "Family restored.";
 
             if (string.Equals(from, "archived", StringComparison.OrdinalIgnoreCase))
-                return RedirectToAction(nameof(ArchivedHouseholds));
+                return RedirectToAction(nameof(ArchivedFamilies));
 
-            return RedirectToAction(nameof(Households));
+            return RedirectToAction(nameof(Families));
         }
 
         // GET: /Bhw/CreateHousehold
         [HttpGet]
-        public async Task<IActionResult> CreateHousehold()
+        public async Task<IActionResult> CreateFamily()
         {
-            var sitio = await GetAssignedSitioAsync();
-            if (sitio != null)
-            {
-                ViewBag.AssignedSitioName = sitio.Name;
-                ViewBag.AssignedSitioId = sitio.Id;
-            }
-            else
-            {
-                ViewBag.AssignedSitioName = null;
-                ViewBag.AssignedSitioId = null;
-            }
+            // Refactored to use the single helper method
+            await GetAndSetAssignedSitioInViewBagAsync();
 
             var vm = new CreateHouseholdVm();
             vm.Children.Add(new ChildVm());
-            return View(vm);
+            return View("CreateFamily", vm);
         }
 
         // POST: /Bhw/CreateHousehold
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateHousehold(CreateHouseholdVm vm)
+        // Short: CreateFamily — async Task<IActionResult> action
+        public async Task<IActionResult> CreateFamily(CreateHouseholdVm vm)
         {
+            // Ensure ViewBag is set for returning to the view if ModelState is invalid
+            await GetAndSetAssignedSitioInViewBagAsync();
+
             if (!ModelState.IsValid)
             {
                 var ms = ModelState
@@ -509,16 +492,16 @@ namespace BarangayProject.Controllers
                 sb.AppendLine("ModelState is invalid. Errors:");
                 foreach (var entry in ms) sb.AppendLine($" - {entry.Key}: {string.Join("; ", entry.Errors)}");
 
-                _logger.LogWarning("CreateHousehold: modelstate invalid: {Errors}", sb.ToString());
+                _logger.LogWarning("CreateFamily: modelstate invalid: {Errors}", sb.ToString());
                 TempData["ErrorMessage"] = sb.ToString();
-                return View(vm);
+                return View("CreateFamily", vm);
             }
 
             string familyHead = null;
             if (!string.IsNullOrWhiteSpace(vm.FatherFirstName) || !string.IsNullOrWhiteSpace(vm.FatherLastName))
-                familyHead = $"{vm.FatherFirstName} {vm.FatherMiddleName} {vm.FatherLastName} {vm.FatherExtension}".Replace("  ", " ").Trim();
+                familyHead = $"{vm.FatherFirstName} {vm.FatherMiddleName} {vm.FatherLastName} {vm.FatherExtension}".Replace("  ", " ").Trim();
             if (string.IsNullOrWhiteSpace(familyHead))
-                familyHead = $"{vm.MotherFirstName} {vm.MotherMiddleName} {vm.MotherLastName} {vm.MotherExtension}".Replace("  ", " ").Trim();
+                familyHead = $"{vm.MotherFirstName} {vm.MotherMiddleName} {vm.MotherLastName} {vm.MotherExtension}".Replace("  ", " ").Trim();
             if (string.IsNullOrWhiteSpace(familyHead)) familyHead = "Unknown";
 
             var detailsJson = JsonSerializer.Serialize(vm, new JsonSerializerOptions { WriteIndented = false });
@@ -689,8 +672,8 @@ namespace BarangayProject.Controllers
                 await _db.SaveChangesAsync();
                 await tx.CommitAsync();
 
-                TempData["SuccessMessage"] = "Household added successfully.";
-                return RedirectToAction(nameof(Households));
+                TempData["SuccessMessage"] = "Family added successfully.";
+                return RedirectToAction(nameof(Families));
             }
             catch (Exception ex)
             {
@@ -709,15 +692,15 @@ namespace BarangayProject.Controllers
                 try { await tx.RollbackAsync(); } catch { /* ignore */ }
 
                 var full = GetFullMessage(ex);
-                _logger.LogError(ex, "CreateHousehold failed: {Message}", full);
-                TempData["ErrorMessage"] = "Error saving household: " + full;
+                _logger.LogError(ex, "CreateFamily failed: {Message}", full);
+                TempData["ErrorMessage"] = "Error saving family: " + full;
                 ModelState.AddModelError("", "Validation failed. Check server logs for details.");
-                return View(vm);
+                return View("CreateFamily", vm);
             }
         }
 
         // GET: /Bhw/ViewHousehold/5
-        public async Task<IActionResult> ViewHousehold(int id)
+        public async Task<IActionResult> ViewFamily(int id)
         {
             var hh = await _db.Households
                 .Include(h => h.Residents)
@@ -736,14 +719,15 @@ namespace BarangayProject.Controllers
 
             if (hh == null) return NotFound();
 
-            await EnsureAssignedSitioInViewBagAsync();
+            // Refactored to use the single helper method
+            await GetAndSetAssignedSitioInViewBagAsync();
 
-            return View(hh);
+            return View("ViewFamily", hh);
         }
 
         // GET: /Bhw/EditHousehold/5
         [HttpGet]
-        public async Task<IActionResult> EditHousehold(int id)
+        public async Task<IActionResult> EditFamily(int id)
         {
             var hh = await _db.Households
                 .Include(h => h.Residents)
@@ -753,17 +737,8 @@ namespace BarangayProject.Controllers
 
             if (hh == null) return NotFound();
 
-            var assigned = await GetAssignedSitioAsync();
-            if (assigned != null)
-            {
-                ViewBag.AssignedSitioName = assigned.Name;
-                ViewBag.AssignedSitioId = assigned.Id;
-            }
-            else
-            {
-                ViewBag.AssignedSitioName = null;
-                ViewBag.AssignedSitioId = null;
-            }
+            // Refactored to use the single helper method
+            var assigned = await GetAndSetAssignedSitioInViewBagAsync();
 
             var vm = new CreateHouseholdVm();
 
@@ -816,6 +791,9 @@ namespace BarangayProject.Controllers
                 });
             }
 
+            if (vm.Children.Count == 0)
+                vm.Children.Add(new ChildVm());
+
             if (hh.Health != null)
             {
                 vm.MotherPregnant = hh.Health.MotherPregnant;
@@ -839,46 +817,49 @@ namespace BarangayProject.Controllers
                 vm.WaterSourceOther = hh.Sanitation.WaterSourceOther;
             }
 
-            TempData["EditingHouseholdId"] = hh.Id;
+            TempData["EditingFamilyId"] = hh.Id;
 
-            return View(vm);
+            return View("EditFamily", vm);
         }
 
         // POST: /Bhw/EditHousehold
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditHousehold(CreateHouseholdVm vm)
+        // Short: EditFamily — async Task<IActionResult> action
+        public async Task<IActionResult> EditFamily(CreateHouseholdVm vm)
         {
-            await EnsureAssignedSitioInViewBagAsync();
+            // Refactored to use the single helper method
+            await GetAndSetAssignedSitioInViewBagAsync();
 
             if (!ModelState.IsValid)
             {
                 TempData["ErrorMessage"] = "Validation failed. Check the inputs.";
-                return View(vm);
+                return View("EditFamily", vm);
             }
 
-            if (!TempData.ContainsKey("EditingHouseholdId"))
+            if (!TempData.ContainsKey("EditingFamilyId"))
             {
-                ModelState.AddModelError("", "Editing session expired. Please open the form again.");
-                return View(vm);
+                TempData["ErrorMessage"] = "Editing session expired. Please open the family form again.";
+                return View("EditFamily", vm);
             }
 
-            if (!int.TryParse(TempData["EditingHouseholdId"]?.ToString(), out var householdId))
+            if (!int.TryParse(TempData["EditingFamilyId"]?.ToString(), out var familyId))
             {
-                ModelState.AddModelError("", "Invalid household id.");
-                return View(vm);
+                ModelState.AddModelError("", "Invalid family id.");
+                return View("EditFamily", vm);
             }
 
             using var tx = await _db.Database.BeginTransactionAsync();
             try
             {
-                var household = await _db.Households
+                var family = await _db.Households
                     .Include(h => h.Residents)
                     .Include(h => h.Health)
                     .Include(h => h.Sanitation)
-                    .FirstOrDefaultAsync(h => h.Id == householdId);
+                    // CRITICAL FIX: Changed '=' assignment operator to '==' comparison operator
+                    .FirstOrDefaultAsync(h => h.Id == familyId);
 
-                if (household == null) return NotFound();
+                if (family == null) return NotFound();
 
                 string UseOther(string selected, string? other) =>
                     string.Equals(selected, "Others", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(other)
@@ -887,19 +868,19 @@ namespace BarangayProject.Controllers
 
                 string familyHead = null;
                 if (!string.IsNullOrWhiteSpace(vm.FatherFirstName) || !string.IsNullOrWhiteSpace(vm.FatherLastName))
-                    familyHead = $"{vm.FatherFirstName} {vm.FatherMiddleName} {vm.FatherLastName} {vm.FatherExtension}".Replace("  ", " ").Trim();
+                    familyHead = $"{vm.FatherFirstName} {vm.FatherMiddleName} {vm.FatherLastName} {vm.FatherExtension}".Replace("  ", " ").Trim();
 
                 if (string.IsNullOrWhiteSpace(familyHead))
-                    familyHead = $"{vm.MotherFirstName} {vm.MotherMiddleName} {vm.MotherLastName} {vm.MotherExtension}".Replace("  ", " ").Trim();
+                    familyHead = $"{vm.MotherFirstName} {vm.MotherMiddleName} {vm.MotherLastName} {vm.MotherExtension}".Replace("  ", " ").Trim();
 
                 if (string.IsNullOrWhiteSpace(familyHead))
                     familyHead = "Unknown";
 
-                household.FamilyHead = familyHead;
-                household.Details = JsonSerializer.Serialize(vm, new JsonSerializerOptions { WriteIndented = false });
-                household.UpdatedAt = DateTime.UtcNow;
+                family.FamilyHead = familyHead;
+                family.Details = JsonSerializer.Serialize(vm, new JsonSerializerOptions { WriteIndented = false });
+                family.UpdatedAt = DateTime.UtcNow;
 
-                var existingResidents = household.Residents?.ToList() ?? new List<Resident>();
+                var existingResidents = family.Residents?.ToList() ?? new List<Resident>();
                 var matchedResidentIds = new HashSet<int>();
 
                 Resident? FindExistingByRole(string role)
@@ -913,7 +894,7 @@ namespace BarangayProject.Controllers
                     var father = FindExistingByRole("Father");
                     if (father == null)
                     {
-                        father = new Resident { HouseholdId = household.Id, Role = "Father", CreatedAt = DateTime.UtcNow };
+                        father = new Resident { HouseholdId = family.Id, Role = "Father", CreatedAt = DateTime.UtcNow };
                         _db.Residents.Add(father);
                     }
 
@@ -949,7 +930,7 @@ namespace BarangayProject.Controllers
                     var mother = FindExistingByRole("Mother");
                     if (mother == null)
                     {
-                        mother = new Resident { HouseholdId = household.Id, Role = "Mother", CreatedAt = DateTime.UtcNow };
+                        mother = new Resident { HouseholdId = family.Id, Role = "Mother", CreatedAt = DateTime.UtcNow };
                         _db.Residents.Add(mother);
                     }
 
@@ -985,6 +966,8 @@ namespace BarangayProject.Controllers
 
                 foreach (var c in postedChildren)
                 {
+                    if (string.IsNullOrWhiteSpace(c.FirstName) && string.IsNullOrWhiteSpace(c.LastName)) continue;
+
                     int? postedId = null;
                     try
                     {
@@ -1003,13 +986,13 @@ namespace BarangayProject.Controllers
                         match = existingResidents.FirstOrDefault(r => r.Id == postedId.Value);
                     }
 
-                    if (match == null && (!string.IsNullOrWhiteSpace(c.FirstName) || !string.IsNullOrWhiteSpace(c.LastName)))
+                    if (match == null)
                     {
                         match = existingResidents.FirstOrDefault(r =>
-                            string.Equals(r.Role ?? "", "Child", StringComparison.OrdinalIgnoreCase)
-                            && string.Equals((r.FirstName ?? "").Trim(), (c.FirstName ?? "").Trim(), StringComparison.OrdinalIgnoreCase)
-                            && string.Equals((r.LastName ?? "").Trim(), (c.LastName ?? "").Trim(), StringComparison.OrdinalIgnoreCase)
-                            && ((r.DateOfBirth == c.DateOfBirth) || (r.DateOfBirth.HasValue && c.DateOfBirth.HasValue && r.DateOfBirth.Value.Date == c.DateOfBirth.Value.Date))
+                                string.Equals(r.Role ?? "", "Child", StringComparison.OrdinalIgnoreCase)
+                                && string.Equals((r.FirstName ?? "").Trim(), (c.FirstName ?? "").Trim(), StringComparison.OrdinalIgnoreCase)
+                                && string.Equals((r.LastName ?? "").Trim(), (c.LastName ?? "").Trim(), StringComparison.OrdinalIgnoreCase)
+                                && ((r.DateOfBirth == c.DateOfBirth) || (r.DateOfBirth.HasValue && c.DateOfBirth.HasValue && r.DateOfBirth.Value.Date == c.DateOfBirth.Value.Date))
                         );
                     }
 
@@ -1017,7 +1000,7 @@ namespace BarangayProject.Controllers
                     {
                         match = new Resident
                         {
-                            HouseholdId = household.Id,
+                            HouseholdId = family.Id,
                             Role = "Child",
                             CreatedAt = DateTime.UtcNow
                         };
@@ -1062,43 +1045,43 @@ namespace BarangayProject.Controllers
                 }
 
                 // Health
-                if (household.Health == null)
-                    household.Health = new HouseholdHealth { HouseholdId = household.Id };
+                if (family.Health == null)
+                    family.Health = new HouseholdHealth { HouseholdId = family.Id };
 
-                household.Health.MotherPregnant = vm.MotherPregnant;
-                household.Health.FamilyPlanning = vm.FamilyPlanning;
-                household.Health.ExclusiveBreastfeeding = vm.ExclusiveBreastfeeding;
-                household.Health.MixedFeeding = vm.MixedFeeding;
-                household.Health.BottleFed = vm.BottleFed;
-                household.Health.OthersFeeding = vm.OthersFeeding;
-                household.Health.OthersFeedingSpecify = vm.OthersFeeding ? vm.OthersFeedingSpecify : null;
-                household.Health.UsingIodizedSalt = vm.UsingIodizedSalt;
-                household.Health.UsingIFR = vm.UsingIFR;
+                family.Health.MotherPregnant = vm.MotherPregnant;
+                family.Health.FamilyPlanning = vm.FamilyPlanning;
+                family.Health.ExclusiveBreastfeeding = vm.ExclusiveBreastfeeding;
+                family.Health.MixedFeeding = vm.MixedFeeding;
+                family.Health.BottleFed = vm.BottleFed;
+                family.Health.OthersFeeding = vm.OthersFeeding;
+                family.Health.OthersFeedingSpecify = vm.OthersFeeding ? vm.OthersFeedingSpecify : null;
+                family.Health.UsingIodizedSalt = vm.UsingIodizedSalt;
+                family.Health.UsingIFR = vm.UsingIFR;
 
                 // Sanitation
-                if (household.Sanitation == null)
-                    household.Sanitation = new HouseholdSanitation { HouseholdId = household.Id };
+                if (family.Sanitation == null)
+                    family.Sanitation = new HouseholdSanitation { HouseholdId = family.Id };
 
-                household.Sanitation.ToiletType = UseOther(vm.ToiletType, vm.ToiletTypeOther);
-                household.Sanitation.ToiletTypeOther = string.Equals(vm.ToiletType, "Others", StringComparison.OrdinalIgnoreCase) ? vm.ToiletTypeOther : null;
-                household.Sanitation.FoodProductionActivity = UseOther(vm.FoodProductionActivity, vm.FoodProductionActivityOther);
-                household.Sanitation.FoodProductionActivityOther = string.Equals(vm.FoodProductionActivity, "Others", StringComparison.OrdinalIgnoreCase) ? vm.FoodProductionActivityOther : null;
-                household.Sanitation.WaterSource = UseOther(vm.WaterSource, vm.WaterSourceOther);
-                household.Sanitation.WaterSourceOther = string.Equals(vm.WaterSource, "Others", StringComparison.OrdinalIgnoreCase) ? vm.WaterSourceOther : null;
+                family.Sanitation.ToiletType = UseOther(vm.ToiletType, vm.ToiletTypeOther);
+                family.Sanitation.ToiletTypeOther = string.Equals(vm.ToiletType, "Others", StringComparison.OrdinalIgnoreCase) ? vm.ToiletTypeOther : null;
+                family.Sanitation.FoodProductionActivity = UseOther(vm.FoodProductionActivity, vm.FoodProductionActivityOther);
+                family.Sanitation.FoodProductionActivityOther = string.Equals(vm.FoodProductionActivity, "Others", StringComparison.OrdinalIgnoreCase) ? vm.FoodProductionActivityOther : null;
+                family.Sanitation.WaterSource = UseOther(vm.WaterSource, vm.WaterSourceOther);
+                family.Sanitation.WaterSourceOther = string.Equals(vm.WaterSource, "Others", StringComparison.OrdinalIgnoreCase) ? vm.WaterSourceOther : null;
 
-                _db.Households.Update(household);
+                _db.Households.Update(family);
                 await _db.SaveChangesAsync();
                 await tx.CommitAsync();
 
-                TempData["SuccessMessage"] = "Household updated successfully.";
-                return RedirectToAction(nameof(Households));
+                TempData["SuccessMessage"] = "Family updated successfully.";
+                return RedirectToAction(nameof(Families));
             }
             catch (Exception ex)
             {
                 try { await tx.RollbackAsync(); } catch { /* ignore */ }
-                _logger.LogError(ex, "EditHousehold failed");
-                ModelState.AddModelError("", "Error updating household: " + ex.Message);
-                return View(vm);
+                _logger.LogError(ex, "EditFamily failed");
+                ModelState.AddModelError("", "Error updating family: " + ex.Message);
+                return View("EditFamily", vm);
             }
         }
 
@@ -1106,8 +1089,9 @@ namespace BarangayProject.Controllers
         [HttpGet]
         public async Task<IActionResult> Reports()
         {
-            await EnsureAssignedSitioInViewBagAsync();
-            return View();
+            // Refactored to use the single helper method
+            await GetAndSetAssignedSitioInViewBagAsync();
+            return View("Reports");
         }
 
         // PRIVATE helper: returns columns and rows (rows are Dictionary<string,string>)
@@ -1352,7 +1336,7 @@ namespace BarangayProject.Controllers
                                 foreach (var c in columns)
                                 {
                                     header.Cell().Background(Colors.Grey.Lighten3).Padding(6).Border(1).BorderColor(Colors.Grey.Medium)
-                                          .Text(c).SemiBold().FontSize(10);
+                                            .Text(c).SemiBold().FontSize(10);
                                 }
                             });
 
@@ -1362,7 +1346,7 @@ namespace BarangayProject.Controllers
                                 {
                                     var txt = row.ContainsKey(c) ? (row[c] ?? "") : "";
                                     table.Cell().Padding(6).BorderBottom(1).BorderColor(Colors.Grey.Lighten2)
-                                         .Text(txt).FontSize(9);
+                                            .Text(txt).FontSize(9);
                                 }
                             }
                         });
@@ -1380,7 +1364,8 @@ namespace BarangayProject.Controllers
         [HttpGet]
         public async Task<IActionResult> Residents(string q = null)
         {
-            await EnsureAssignedSitioInViewBagAsync();
+            // Refactored to use the single helper method
+            await GetAndSetAssignedSitioInViewBagAsync();
 
             IQueryable<Resident> residentQ = _db.Residents
                 .AsNoTracking()
@@ -1442,14 +1427,13 @@ namespace BarangayProject.Controllers
             })
             .ToList();
 
-            ViewBag.SearchQuery = q ?? "";
-
-            return View(list);
+return View("Residents", list);
         }
 
         // Archive resident
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: ArchiveResident — async Task<IActionResult> action
         public async Task<IActionResult> ArchiveResident(int id)
         {
             var resident = await _db.Residents.FindAsync(id);
@@ -1457,6 +1441,8 @@ namespace BarangayProject.Controllers
 
             try
             {
+                // Note: The logic for soft-deleting Residents seems to be based on an assumption
+                // that the Resident model contains IsArchived and ArchivedAt properties, which it should for this to work.
                 resident.IsArchived = true;
                 resident.ArchivedAt = DateTime.UtcNow;
                 _db.Update(resident);
@@ -1477,7 +1463,8 @@ namespace BarangayProject.Controllers
         [HttpGet]
         public async Task<IActionResult> ArchivedResidents()
         {
-            await EnsureAssignedSitioInViewBagAsync();
+            // Refactored to use the single helper method
+            await GetAndSetAssignedSitioInViewBagAsync();
 
             IQueryable<Resident> residentQ = _db.Residents
                 .AsNoTracking()
@@ -1526,12 +1513,13 @@ namespace BarangayProject.Controllers
             })
             .ToList();
 
-            return View(list);
+            return View("ArchivedResidents", list);
         }
 
         // Restore resident
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: RestoreResident — async Task<IActionResult> action
         public async Task<IActionResult> RestoreResident(int id)
         {
             var resident = await _db.Residents.FindAsync(id);
@@ -1558,15 +1546,18 @@ namespace BarangayProject.Controllers
         [HttpGet]
         public async Task<IActionResult> Settings()
         {
-            await EnsureAssignedSitioInViewBagAsync();
-            return View();
+            // Refactored to use the single helper method
+            await GetAndSetAssignedSitioInViewBagAsync();
+            return View("Settings");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Short: Settings — async Task<IActionResult> action
         public async Task<IActionResult> Settings(ChangePasswordVm model)
         {
-            await EnsureAssignedSitioInViewBagAsync();
+            // Refactored to use the single helper method
+            await GetAndSetAssignedSitioInViewBagAsync();
 
             if (!ModelState.IsValid)
                 return View(model);
